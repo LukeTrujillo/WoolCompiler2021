@@ -1,0 +1,3 @@
+class AAAA {
+	(* BBBB *) *)
+}
