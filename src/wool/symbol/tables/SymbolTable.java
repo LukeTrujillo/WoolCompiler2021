@@ -53,7 +53,6 @@ public class SymbolTable {
     	StringBuilder sb = new StringBuilder();
     	sb.append("  parent scope level: " 
     		+ (parentTable == null ? "none" : parentTable.getScopeLevel()) + '\n');
-
         sb.append("  scopeLevel: " + scopeLevel + '\n');
     	sb.append("  elements: \n");
     	for (AbstractBinding b : elements.values()) {

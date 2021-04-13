@@ -8,12 +8,10 @@ import java.util.stream.Stream;
 
 import wool.lexparse.WoolBaseVisitor;
 import wool.lexparse.WoolVisitor;
-import wool.symbol.BindingFactory.ClassBinding;
-import wool.symbol.BindingFactory.MethodBinding;
+import wool.symbol.bindings.MethodBinding;
+import wool.symbol.descriptors.MethodDescriptor;
 import wool.symbol.tables.SymbolTable;
-import wool.symbol.ClassDescriptor;
-import wool.symbol.MethodDescriptor;
-import wool.symbol.TableManager;
+import wool.symbol.tables.TableManager;
 import wool.lexparse.WoolParser.ClassBodyContext;
 import wool.lexparse.WoolParser.ClassDefContext;
 import wool.lexparse.WoolParser.ExprContext;
@@ -36,68 +34,66 @@ public class SymbolTableBuilder extends WoolBaseVisitor {
 		this.manager = TableManager.getInstance();
 	}
 
+	@Override
+	public String visitProgram(ProgramContext ctx) {
+		visitChildren(ctx);
+		return null;
+	}
 	
 	@Override
 	public String visitClassDef(ClassDefContext ctx) {
-		System.out.println("start of visitClassDef()");
-		if(manager.lookupClass(ctx.className.toString()) == null) { // this class has not been defined yet
-			
-			manager.StartNewClass(ctx.className.getText(), ctx.inherits != null? ctx.inherits.getText() : null);
-			super.visitClassDef(ctx);
+		
+		
+		String className = ctx.className.getText();
+		String inherits = ctx.className.getText();
+		
+		System.out.println("enter visitClassDef(" + className + ")");
+		
+		if(inherits == null) {
+			manager.makeNewClass(className, "Object");
+		} else {
+			manager.makeNewClass(className, inherits);
 		}
 		
-		System.out.println("end of visitClassDef()");
+		manager.enterScopeInClass();
+		
+		visitChildren(ctx);
+		
+		manager.exitScopeInClass();
+		
+		System.out.println("exit visitClassDef(" + className + ")");
+	
 		return null;
 	}
 	
-	@Override
-	public String visitClassBody(ClassBodyContext ctx) {
-		super.visitClassBody(ctx);
-		manager.exitScope();
-		return null;
-	}
-	
-	
+
 	@Override
 	public String visitVariableDef(VariableDefContext ctx) {
 		
-		if(manager.lookupIDInClass(ctx.name.getText(), manager.currentClassName) == null) { // the variable is not defined yet
-			
-			manager.newVariable(ctx.name.getText(), ctx.type.getText(), ctx.getStart());
-			
-		}
+		manager.newVariable(ctx.name.getText(), ctx.type.getText(), ctx.getStart());
 		
 		return null;
 	}
 	
-	
-	
 	@Override
 	public String visitMethod(MethodContext ctx) {
-		System.out.println("start of visitMethod()");
-		if(manager.currentClassName != null && manager.lookupClass(manager.currentClassName) != null) { // the class is defined
+		
+		String[] argTypes = new String[ctx.formal().size()];
 			
-			if(manager.lookupMethodInClass(ctx.methodName.getText(), manager.currentClassName) == null) { // the method has not been defined yet
-					manager.enterScope();
-				
-					List<String> vargs = new ArrayList<String>();
-					
-					ctx.formals.stream().forEach((formal) -> vargs.add(formal.type.getText()));
-					
-					MethodDescriptor md = new MethodDescriptor(ctx.methodName.getText(), ctx.type.getText(),  vargs.toArray(new String[0]));
-					MethodBinding mb = manager.newMethod(md, ctx.methodName);
-					
-					manager.currentTable.add(ctx.methodName.getText(), mb);
-					
-					super.visitMethod(ctx);
-					manager.exitScope();
-			} else {
-				throw new WoolException("Method '" + ctx.methodName.getText() + "' already defined in class '" + manager.currentClassName + "'");
-			}
+		int index = 0;
+		for(FormalContext fc : ctx.formals) {
+			argTypes[index] = fc.type.getText();
+			index = index + 1;
 		}
 		
-		System.out.println("end of visitMethod()");
-		 
+		MethodDescriptor descriptor = new MethodDescriptor(ctx.methodName.getText(), ctx.type.getText(), argTypes);
+		
+		manager.newMethod(descriptor, ctx.getStart());
+		
+		manager.enterScopeInClass();
+		visitChildren(ctx);
+		manager.exitScopeInClass();
+		
 		return null;
 	}
 	

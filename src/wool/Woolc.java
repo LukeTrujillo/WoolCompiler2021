@@ -17,7 +17,7 @@ import javax.swing.JFrame;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
 import wool.lexparse.WoolParser;
-import wool.symbol.TableManager;
+import wool.symbol.tables.TableManager;
 import wool.utility.*;
 
 

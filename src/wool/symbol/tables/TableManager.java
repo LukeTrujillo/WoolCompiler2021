@@ -27,15 +27,15 @@ public class TableManager {
 	private TableManager() {
 		this.tables = new ArrayList<SymbolTable>();
 
-		this.initBaseClasses();
-
 		this.selfToken = tokenFactory.create(wool.lexparse.WoolLexer.ID, "self");
 
 		this.currentClassBinding = null;
 		this.currentTable = null;
-		this.classTable = null;
+		this.classTable = new SymbolTable(null);
 		
 		this.currentClassName = null;
+		
+		this.initBaseClasses();
 	}
 
 	public static TableManager getInstance() {
@@ -43,7 +43,6 @@ public class TableManager {
 	}
 
 	private void initBaseClasses() {
-		classTable = new SymbolTable(null);
 
 		/*
 		 * Make the Object base class
@@ -129,7 +128,7 @@ public class TableManager {
 		if (getClassTable().probe(className) != null) {
 			throw new WoolException("Attempt to redefine class: " + className);
 		}
-		if (getCurrentTable() != null) {
+		if (getCurrentTable() == getClassTable()) {
 			throw new WoolException("Starting a new class: " + className
 					+ " and there is still a symbol table that has not been closed");
 		}
@@ -141,7 +140,7 @@ public class TableManager {
 
 		getClassTable().add(className, binding);
 
-		currentTable = new SymbolTable(null);
+		currentTable = new SymbolTable(currentTable);
 		currentClassBinding = binding;
 
 		tables.add(currentTable);
@@ -167,6 +166,10 @@ public class TableManager {
         return b;
     }
 	
+	public String getCurrentClassName() {
+		return this.getCurrentClassName();
+	}
+	
 	public void enterScopeInClass() {
 		currentTable = new SymbolTable(currentTable);
 		tables.add(currentTable);
@@ -183,5 +186,20 @@ public class TableManager {
 
 	public SymbolTable getCurrentTable() {
 		return currentTable;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+        sb.append("\n-----------------------------------------------");
+        sb.append("Class table:\n");
+        sb.append(classTable.toString());
+        sb.append("\n-----------------------------------------------");
+        for (SymbolTable st : tables) {
+            sb.append("\nSymbol table " + st.getTableNumber() + "\n");
+            sb.append(st.toString() + "\n");
+        }
+        sb.append("\n-----------------------------------------------");
+        return sb.toString();
 	}
 }
