@@ -13,6 +13,8 @@ public class SymbolTable {
 	private SymbolTable parentTable;
 	private final int scopeLevel;
 	private int tableNumber;
+	
+	private String label = "unnamed";
 
 	public SymbolTable(SymbolTable parentTable) {
 		this.parentTable = parentTable;
@@ -27,7 +29,12 @@ public class SymbolTable {
 
 		this.tableNumber = nextTableNumber++;
 	}
-
+	
+	public SymbolTable(SymbolTable parentTable, String label) {
+		this(parentTable);
+		this.label = label;
+	}
+	
 	public AbstractBinding add(String key, AbstractBinding value) {
 		if (elements.containsKey(key)) {
 			throw new WoolException("Attempt to add a duplicate " + value.getClass().getName() + " with key: " + key
@@ -51,7 +58,7 @@ public class SymbolTable {
 	@Override
     public String toString() {
     	StringBuilder sb = new StringBuilder();
-    	sb.append("  parent scope level: " 
+    	sb.append("(" + this.label + ")  parent scope level: " 
     		+ (parentTable == null ? "none" : parentTable.getScopeLevel()) + '\n');
         sb.append("  scopeLevel: " + scopeLevel + '\n');
     	sb.append("  elements: \n");

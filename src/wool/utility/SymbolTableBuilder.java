@@ -55,8 +55,6 @@ public class SymbolTableBuilder extends WoolBaseVisitor {
 			manager.makeNewClass(className, inherits);
 		}
 		
-		manager.enterScopeInClass();
-		
 		visitChildren(ctx);
 		
 		manager.exitScopeInClass();
@@ -88,7 +86,8 @@ public class SymbolTableBuilder extends WoolBaseVisitor {
 		
 		MethodDescriptor descriptor = new MethodDescriptor(ctx.methodName.getText(), ctx.type.getText(), argTypes);
 		
-		manager.newMethod(descriptor, ctx.getStart());
+		MethodBinding mb = manager.newMethod(descriptor, ctx.getStart());
+	
 		
 		manager.enterScopeInClass();
 		visitChildren(ctx);

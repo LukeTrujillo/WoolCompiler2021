@@ -140,7 +140,7 @@ public class TableManager {
 
 		getClassTable().add(className, binding);
 
-		currentTable = new SymbolTable(currentTable);
+		currentTable = new SymbolTable(currentTable, className);
 		currentClassBinding = binding;
 
 		tables.add(currentTable);
@@ -154,6 +154,8 @@ public class TableManager {
 		}
 		MethodBinding mb = MethodBinding.makeMethodBinding(md, t, currentClassName);
 		currentClassBinding.getClassDescriptor().addMethod(mb);
+		
+		currentTable.add(mb.getSymbol(), mb);
 		return mb;
 	}
 	
