@@ -12,7 +12,7 @@ public abstract class AbstractBinding {
 	protected String symbolType;
 
 	protected String classWhereDefined;
-	protected Token token;
+	public Token token;
 	protected int address;
 	
 	public AbstractBinding(String symbol, String symbolType, BindingType bindingType, Token token) {
@@ -92,7 +92,7 @@ public abstract class AbstractBinding {
      * @return any extra information that is useful in printing
      */
 	protected String extraInfo() {
-        return "";
+        return null;
     }
 
 	/*

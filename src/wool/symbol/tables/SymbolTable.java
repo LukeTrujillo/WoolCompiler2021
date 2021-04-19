@@ -21,6 +21,7 @@ public class SymbolTable {
 
 		if (parentTable == null) {
 			this.scopeLevel = 1;
+			nextTableNumber = 2;
 		} else {
 			this.scopeLevel = parentTable.getScopeLevel() + 1;
 		}

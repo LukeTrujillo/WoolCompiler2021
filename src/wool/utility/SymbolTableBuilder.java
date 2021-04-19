@@ -8,13 +8,17 @@ import java.util.stream.Stream;
 
 import wool.lexparse.WoolBaseVisitor;
 import wool.lexparse.WoolVisitor;
+import wool.symbol.bindings.AbstractBinding;
+import wool.symbol.bindings.ClassBinding;
 import wool.symbol.bindings.MethodBinding;
+import wool.symbol.bindings.ObjectBinding;
 import wool.symbol.descriptors.MethodDescriptor;
 import wool.symbol.tables.SymbolTable;
 import wool.symbol.tables.TableManager;
 import wool.lexparse.WoolParser.ClassBodyContext;
 import wool.lexparse.WoolParser.ClassDefContext;
 import wool.lexparse.WoolParser.ExprContext;
+import wool.lexparse.WoolParser.ExprListContext;
 import wool.lexparse.WoolParser.FormalContext;
 import wool.lexparse.WoolParser.FullMethodCallContext;
 import wool.lexparse.WoolParser.IsNullExprContext;
@@ -23,7 +27,7 @@ import wool.lexparse.WoolParser.NewExprContext;
 import wool.lexparse.WoolParser.ProgramContext;
 import wool.lexparse.WoolParser.VariableDefContext;
 
-public class SymbolTableBuilder extends WoolBaseVisitor {
+public class SymbolTableBuilder extends WoolBaseVisitor<AbstractBinding> {
 	
 	private int scope = 0;
 	
@@ -35,27 +39,42 @@ public class SymbolTableBuilder extends WoolBaseVisitor {
 	}
 
 	@Override
-	public String visitProgram(ProgramContext ctx) {
+	public AbstractBinding visitProgram(ProgramContext ctx) {
 		visitChildren(ctx);
 		return null;
 	}
 	
 	@Override
-	public String visitClassDef(ClassDefContext ctx) {
+	public AbstractBinding visitClassDef(ClassDefContext ctx) {
 		
 		
 		String className = ctx.className.getText();
-		String inherits = ctx.className.getText();
+		String inherits = ctx.inherits == null? null : ctx.inherits.getText();
 		
 		System.out.println("enter visitClassDef(" + className + ")");
 		
+		ClassBinding classBinding;
 		if(inherits == null) {
-			manager.makeNewClass(className, "Object");
+			classBinding = manager.makeNewClass(className, "Object");
+
 		} else {
-			manager.makeNewClass(className, inherits);
+			classBinding = manager.makeNewClass(className, inherits);
 		}
 		
-		visitChildren(ctx);
+		/* 
+		 * Lets add variables for everything in this scope first
+		 */
+		for(VariableDefContext variable : ctx.classBody().variables) {
+			ObjectBinding binding = (ObjectBinding) this.visitVariableDef(variable);			
+		}
+	
+		for(MethodContext method : ctx.classBody().methods) {
+			
+			
+			
+			MethodBinding binding = (MethodBinding) this.visitMethod(method);
+			
+		}
 		
 		manager.exitScopeInClass();
 		
@@ -66,35 +85,24 @@ public class SymbolTableBuilder extends WoolBaseVisitor {
 	
 
 	@Override
-	public String visitVariableDef(VariableDefContext ctx) {
-		
-		manager.newVariable(ctx.name.getText(), ctx.type.getText(), ctx.getStart());
-		
-		return null;
+	public AbstractBinding visitVariableDef(VariableDefContext ctx) {
+		return manager.registerVariable(ctx);
 	}
 	
 	@Override
-	public String visitMethod(MethodContext ctx) {
+	public AbstractBinding visitMethod(MethodContext ctx) {
 		
-		String[] argTypes = new String[ctx.formal().size()];
-			
-		int index = 0;
-		for(FormalContext fc : ctx.formals) {
-			argTypes[index] = fc.type.getText();
-			index = index + 1;
-		}
-		
-		MethodDescriptor descriptor = new MethodDescriptor(ctx.methodName.getText(), ctx.type.getText(), argTypes);
-		
-		MethodBinding mb = manager.newMethod(descriptor, ctx.getStart());
+		MethodBinding binding = manager.registerMethod(ctx);
 	
-		
 		manager.enterScopeInClass();
 		visitChildren(ctx);
 		manager.exitScopeInClass();
 		
-		return null;
+		return binding;
 	}
+	
+	
+	
 	
 
 }

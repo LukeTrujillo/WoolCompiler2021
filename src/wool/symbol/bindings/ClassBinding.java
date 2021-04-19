@@ -8,7 +8,7 @@ public class ClassBinding extends AbstractBinding {
 	private ClassDescriptor descriptor;
 
 	public ClassBinding(ClassDescriptor cd) {
-		super(cd.className, cd.className,BindingType.TYPE, null);
+		super(cd.className, cd.className, BindingType.TYPE, null);
 		this.descriptor = cd;
 	}
 	

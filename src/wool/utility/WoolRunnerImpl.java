@@ -3,6 +3,9 @@ package wool.utility;
 import java.util.*;
 import java.util.function.Supplier;
 import org.antlr.v4.runtime.*;
+
+import wool.ast.ASTCreator;
+import wool.ast.ASTNode;
 import wool.lexparse.*;
 import wool.utility.SymbolTableBuilder;
 
@@ -10,7 +13,7 @@ public class WoolRunnerImpl implements WoolRunner
 {
     private WoolLexer lexer;
     private WoolParser parser;
-//    private ASTNode ast;
+    private ASTNode ast;
     private ParserRuleContext parseTree;
 //    private LinkedList<IRinstruction> ir;
     
@@ -60,13 +63,13 @@ public class WoolRunnerImpl implements WoolRunner
     
     
 //    @Override
-//    public ASTNode createAST()
-//    {
-//        parseTree = parse();
-//        ASTCreator creator = new ASTCreator();
-//        ast = parseTree.accept(creator);
-//        return ast;
-//    }
+    public ASTNode createAST()
+    {
+        parseTree = parse();
+        ASTCreator creator = new ASTCreator();
+        ast = parseTree.accept(creator);
+        return ast;
+   }
 //    
     //@Override
    // public ASTNode typecheck()
@@ -141,9 +144,10 @@ public class WoolRunnerImpl implements WoolRunner
 //    /**
 //     * @return the ast
 //     */
-//    public ASTNode getAst()
-//    {
-//        return ast;
+   public ASTNode getAst()
+   {
+	   return ast;
+   }
 //    }
 //    
 //    /**

@@ -19,9 +19,7 @@ class Wheel {
 	}
 	
 	isMoving() : boolean {
-	 	{
-			true;
-		}
+	 	 { true; }
 	}
 	
 	getSpeed() : int { currentSpeed }
@@ -38,6 +36,7 @@ class Robot {
 	
 	
 	init(): boolean {
+		test: Wheel <- new Wheel;
 		{
 			leftFront.init(0, 2);
 			rightFront.init(0, 2);

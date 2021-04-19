@@ -11,7 +11,7 @@ package wool.lexparse;
 // Parser rules
 program: classes+=classDef+ EOF;       // Non-greedy just to not have a warning
         
-classDef: 'class' className=TYPE ('inherits' inherits=TYPE)? classBody;        
+classDef: 'class' className=TYPE ('inherits' inherits=TYPE)*? classBody;        
                 
 classBody: OPEN_BRACKET (variables+=variableDef | methods+=method)* CLOSE_BRACKET;
 

@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import org.antlr.v4.runtime.CommonTokenFactory;
 import org.antlr.v4.runtime.Token;
 
+import wool.lexparse.WoolParser.FormalContext;
+import wool.lexparse.WoolParser.MethodContext;
+import wool.lexparse.WoolParser.VariableDefContext;
 import wool.symbol.bindings.ClassBinding;
 import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
@@ -135,7 +138,9 @@ public class TableManager {
 
 		ClassDescriptor descriptor = new ClassDescriptor(className, inherits == null ? "Object" : inherits);
 		descriptor.addVariable(ObjectBinding.makeObjectBinding("self", "SELF_TYPE", selfToken));
-
+		descriptor.className = className;
+		descriptor.inherits = inherits;
+		
 		ClassBinding binding = ClassBinding.makeClassBinding(descriptor);
 
 		getClassTable().add(className, binding);
@@ -144,30 +149,59 @@ public class TableManager {
 		currentClassBinding = binding;
 
 		tables.add(currentTable);
+	
 		return binding;
 	}
 
-	public MethodBinding newMethod(MethodDescriptor md, Token t) {
-		if (currentClassBinding.getClassDescriptor().getMethodBinding(md.methodName) != null) {
-			throw new WoolException(
-					"Method " + md.methodName + " has already been defined in class " + currentClassName);
+
+	
+	public MethodBinding registerMethod(MethodContext ctx) {
+		String methodName = ctx.methodName.getText();
+		String typeName = ctx.typeName().getText();
+		
+		String[] argTypes = new String[ctx.formal().size()];
+		
+		int index = 0;
+		for(FormalContext fc : ctx.formals) {
+			argTypes[index] = fc.type.getText();
+			index = index + 1;
 		}
-		MethodBinding mb = MethodBinding.makeMethodBinding(md, t, currentClassName);
+	
+		if (currentClassBinding.getClassDescriptor().getMethodBinding(methodName) != null) {
+			throw new WoolException(
+					"Method " + methodName + " has already been defined in class " + currentClassName);
+		}
+		
+		MethodDescriptor md = new MethodDescriptor(methodName, typeName, argTypes);
+		
+		MethodBinding mb = MethodBinding.makeMethodBinding(md, ctx.methodName, currentClassName);
+		mb.setClassWhereDefined(currentClassName);
 		currentClassBinding.getClassDescriptor().addMethod(mb);
 		
-		currentTable.add(mb.getSymbol(), mb);
+		currentTable.add(methodName, mb);
+		
 		return mb;
 	}
 	
-	public ObjectBinding newVariable(String varName, String varType, Token t) {
-        if (currentTable.getElements().containsKey(varName)) {
-            throw new WoolException("Attempt to redefine variable " + varName);
+	public ObjectBinding registerVariable(VariableDefContext ctx) {
+		String name = ctx.name.getText();
+		String type = ctx.typeName().getText();
+		
+		if (currentTable.getElements().containsKey(name)) { // or in lower scopes too
+            throw new WoolException("Attempt to redefine variable " + name);
         }
-        ObjectBinding b = ObjectBinding.makeObjectBinding(varName, varType, t);
-        currentTable.add(varName, b);
-        return b;
-    }
+		
+		ObjectBinding b = ObjectBinding.makeObjectBinding(name, type, ctx.name);
+		b.setClassWhereDefined(currentClassName);
+	    currentTable.add(name, b);
+	    
+	    currentClassBinding.getClassDescriptor().addVariable(b);
+	    
+	    return b;
+	}
 	
+	
+		
 	public String getCurrentClassName() {
 		return this.getCurrentClassName();
 	}

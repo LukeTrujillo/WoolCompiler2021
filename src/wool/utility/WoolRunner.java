@@ -13,6 +13,8 @@
 package wool.utility;
 
 import org.antlr.v4.runtime.*;
+
+import wool.ast.ASTNode;
 import wool.lexparse.*;
 
 /**
@@ -42,8 +44,8 @@ public interface WoolRunner
 //     * Parse the input and produce the AST.
 //     * @return the AST
 //     */
-//    ASTNode createAST();
-//    
+    	ASTNode createAST();
+//   	 
 //    /**
 //     * Typecheck after running the AST.
 //     * @return the AST after typechecking, unless there are errors, in which case

@@ -6,3 +6,5 @@
 /WoolLexer.tokens
 /WoolParser.java
 /WoolVisitor.java
+/WoolBaseListener.java
+/WoolListener.java
