@@ -4,10 +4,11 @@ import java.util.*;
 import java.util.function.Supplier;
 import org.antlr.v4.runtime.*;
 
-import wool.ast.ASTCreator;
+import wool.ast.ASTBuilder;
 import wool.ast.ASTNode;
 import wool.lexparse.*;
-import wool.utility.SymbolTableBuilder;
+import wool.typechecking.SymbolTableChecker;
+import wool.typechecking.TypeChecker;
 
 public class WoolRunnerImpl implements WoolRunner
 {
@@ -56,8 +57,8 @@ public class WoolRunnerImpl implements WoolRunner
     public ParserRuleContext buildSymbolTable()
     {
         parseTree = parse();
-        SymbolTableBuilder stb = new SymbolTableBuilder();
-        parseTree.accept(stb);
+        ASTBuilder builder = new ASTBuilder();
+        parseTree.accept(builder);
         return parseTree;
     }
     
@@ -65,20 +66,23 @@ public class WoolRunnerImpl implements WoolRunner
 //    @Override
     public ASTNode createAST()
     {
+    	System.out.println("Calling createAST()");
         parseTree = parse();
-        ASTCreator creator = new ASTCreator();
-        ast = parseTree.accept(creator);
+        ASTBuilder builder = new ASTBuilder();
+        ast = parseTree.accept(builder);
+        
+ 
         return ast;
    }
 //    
-    //@Override
-   // public ASTNode typecheck()
-    //{
-      //  createAST();
-      //  ast.accept(new SymbolTableChecker());
-      //  ast.accept(new TypeChecker());
-       // return ast;
-   // }
+    @Override
+    public ASTNode typecheck()
+    {
+        createAST();
+        ast.accept(new SymbolTableChecker());
+        ast.accept(new TypeChecker());
+        return ast;
+    }
     
 //    @Override
 //    public LinkedList<IRinstruction> makeIR()

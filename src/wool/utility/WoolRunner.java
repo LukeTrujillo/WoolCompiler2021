@@ -51,7 +51,7 @@ public interface WoolRunner
 //     * @return the AST after typechecking, unless there are errors, in which case
 //     *  it may be incomplete.
 //     */
-//    ASTNode typecheck();
+    	ASTNode typecheck();
 //    
 //    /**
 //     * Do typechecking and then create the IR stream.

@@ -16,6 +16,8 @@ import java.util.*;
 import javax.swing.JFrame;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
+
+import wool.ast.ASTPrinter;
 import wool.lexparse.WoolParser;
 import wool.symbol.tables.TableManager;
 import wool.utility.*;
@@ -47,9 +49,9 @@ public class Woolc
         phase = PARSE;
         displayParseTree = true;
         displayGUI = false;
-        displayAST = false;
+        displayAST = true;
         displayIR = false;
-        displayTables = true;
+        displayTables = false;
         displaySource = false;
         bytecode = null;
     }
@@ -78,7 +80,7 @@ public class Woolc
             case PARSE: runner.parse(); break;
 //            case AST: runner.createAST(); break;
             //case SEMANTIC: runner.typecheck(); break;
-            case SEMANTIC: runner.buildSymbolTable(); break;
+            case SEMANTIC: runner.createAST(); break;
 //            case IR: runner.makeIR(); break;
 //            case COMPILE: 
 //                bytecode = runner.compile(); 
@@ -122,11 +124,11 @@ public class Woolc
             showGUI(runner.getParser(), runner.getParseTree());
         }
         
-//        if (displayAST) {
-//            System.out.println("\n------------------------------\nAbstract Syntax Tree:\n");
-//            ASTPrinter printer = new ASTPrinter();
-//            System.out.println(runner.getAst().accept(printer));
-//        }
+        if (displayAST) {
+            System.out.println("\n------------------------------\nAbstract Syntax Tree:\n");
+            ASTPrinter printer = new ASTPrinter();
+           runner.getAst().accept(printer);
+        }
         
 //        if (displayIR) {
 //            System.out.println("\n------------------------------\nIntermediate code:\n");

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.Token;
 import wool.lexparse.WoolParser.FormalContext;
 import wool.lexparse.WoolParser.MethodContext;
 import wool.lexparse.WoolParser.VariableDefContext;
+import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.bindings.ClassBinding;
 import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
@@ -138,6 +139,8 @@ public class TableManager {
 
 		ClassDescriptor descriptor = new ClassDescriptor(className, inherits == null ? "Object" : inherits);
 		descriptor.addVariable(ObjectBinding.makeObjectBinding("self", "SELF_TYPE", selfToken));
+		
+		
 		descriptor.className = className;
 		descriptor.inherits = inherits;
 		
@@ -222,6 +225,14 @@ public class TableManager {
 
 	public SymbolTable getCurrentTable() {
 		return currentTable;
+	}
+	
+	public ClassBinding getClassBindingFromString(String className) {
+		AbstractBinding binding = getClassTable().lookup(className);
+		
+		if(binding == null || !(binding instanceof ClassBinding)) throw new WoolException("class name lookup for " + className + " not found");
+		
+		return (ClassBinding) binding;
 	}
 	
 	@Override

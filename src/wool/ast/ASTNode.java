@@ -5,38 +5,65 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
-import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.tables.SymbolTable;
 import wool.symbol.tables.TableManager;
 
 public abstract class ASTNode {
-
-	public enum ASTNodeType {
-		nAssign, nBinary, nUrinary, nVariable, nWhile, nClass
-	}
 	
-	public ASTNodeType nodeType;
-	public String nodeClass; //the class of an expression or some other activity
-	public ASTNode parent;
-	public List<ASTNode> children;
-	public Token token;
-	public SymbolTable scope; // the current
-	public AbstractBinding binding;
+	protected ASTNodeType nodeType;
+	protected String nodeClass;
+	protected ASTNode parent;
+	protected List<ASTNode> children;
+	
+	protected Token token;
+	protected SymbolTable scope;
 	
 	public ASTNode() {
-		this(null); // use this only for the cooltext node
+		this(null);
 	}
 	
-	public ASTNode(ASTNode parent) {
-		children = new ArrayList<ASTNode>();
-		nodeClass = null;
+	public ASTNode(ASTNodeType nodeType) {
+		this.children = new ArrayList<ASTNode>();
+		this.nodeClass = null;
+		this.parent = null;
+		this.token = null;
+		this.scope = TableManager.getInstance().getCurrentTable();
+		this.nodeType = nodeType;
+	}
+	
+	public void setParent(ASTNode parent) {
 		this.parent = parent;
-		token = null;
-		scope = TableManager.getInstance().getCurrentTable();
 	}
 	
-	public void addChild(ASTNode type) {
-		this.children.add(type);
+	public void addChildAndSetAsParent(ASTNode child) { 
+		this.children.add(child);
+		child.setParent(this);
+	}
+	
+	public ASTNode getChild(int i) { return children.get(i); }
+
+	protected String extraInfo() {
+		return null;
 	}
 
+	public String accept(ASTPrinter printer) {
+		
+		if(this instanceof WoolType) {
+			System.out.print("WoolType node");
+		} else if(this instanceof WoolMethod) {
+			System.out.print("WoolMethod node");
+		}
+		
+		
+		System.out.print(" children={" );
+		for(ASTNode node : children) {
+			node.accept(printer);
+			
+		}
+		System.out.print("}");
+		
+		System.out.println();
+		return nodeClass;
+		
+	}
 }
