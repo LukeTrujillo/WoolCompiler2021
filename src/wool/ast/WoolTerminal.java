@@ -7,7 +7,7 @@ import wool.symbol.bindings.AbstractBinding;
 
 public class WoolTerminal extends ASTNode{
 
-	public static enum TerminalType {tInt, tStr, tBool, tID, tMethod, tType };
+	public static enum TerminalType {tInt, tStr, tBool, tID, tMethod, tType};
 		
 	public TerminalType terminalType;
 	public AbstractBinding binding;

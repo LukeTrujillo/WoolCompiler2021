@@ -28,9 +28,18 @@ public class ASTFactory {
 		return new WoolVariable(binding);
 	}
 	
-	public static WoolMethodCall makeMethodCall(DispatchType dispatch) {
+	public static WoolMethodCall makeMethodCall(WoolMethodCall.DispatchType dispatch) {
 		return new WoolMethodCall(dispatch);
 	}
+	
+	public static WoolExprList makeExprList() {
+		return new WoolExprList();
+	}
+	
+	public static WoolAssignExpr makeAssignExpr() { return new WoolAssignExpr(); }
+	
+	public static WoolIf makeIf() { return new WoolIf(); }
+	public static WoolWhile makeWhile() { return new WoolWhile(); }
 
 	public static WoolTerminal makeID(AbstractBinding b) { return new WoolTerminal(b); }
 	public static WoolTerminal makeID(Token t) { return new WoolTerminal(t, TerminalType.tID); }
