@@ -23,7 +23,6 @@ formal: name=ID ':' type=typeName;
 
 typeName: classType=TYPE | intType = 'int' | boolType = 'boolean';	
 	
-	
 expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #FullMethodCall
 	|  methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #LocalMethodCall
 	| 'if' condition=expr 'then' thenExpr=expr 'else' elseExpr=expr 'fi' #IfExpr

@@ -10,6 +10,7 @@ import wool.lexparse.WoolParser.ExprListContext;
 import wool.lexparse.WoolParser.FullMethodCallContext;
 import wool.lexparse.WoolParser.IfExprContext;
 import wool.lexparse.WoolParser.LocalMethodCallContext;
+
 import wool.lexparse.WoolParser.MethodContext;
 import wool.lexparse.WoolParser.ProgramContext;
 import wool.lexparse.WoolParser.VariableDefContext;
@@ -89,10 +90,22 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 			method.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
 		}
 		
+		if (ctx.expr() instanceof ExprListContext) {
+			ExprListContext context = (ExprListContext) ctx.expr();
+			
+			for(ExprContext expr : context.expr()) {
+				ASTNode node = expr.accept(this);
+				method.addChildAndSetAsParent(node);
+			}
+			
+		}
+
+		
 		tm.exitScopeInClass();
 		
 		return method;
-	}
+		
+		}
 	
 	@Override
 	public ASTNode visitVariableDef(VariableDefContext ctx) {
@@ -121,22 +134,10 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	}
 	
 	@Override
-	public ASTNode visitExprList(ExprListContext ctx) {
-		WoolExprList exprList = ASTFactory.makeExprList();
-		
-		for(ExprContext expr : ctx.exprs) {
-			ASTNode astExpr = expr.accept(this);
-			exprList.addChildAndSetAsParent(astExpr);
-			
-		}
-		return exprList;
-	}
-	
-	@Override
 	public ASTNode visitAssignExpr(AssignExprContext ctx) {
 		WoolAssignExpr expr = ASTFactory.makeAssignExpr();
 		
-		WoolTerminal id = ASTFactory.makeID(ctx.ID().getSymbol());
+		
 		ASTNode internalExpr = ctx.expr().accept(this);
 		
 		expr.addChildAndSetAsParent(id);
@@ -147,11 +148,32 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitFullMethodCall(FullMethodCallContext ctx) {
-		return ASTFactory.makeMethodCall(DispatchType.mcObject);
+		
+		WoolMethodCall method = ASTFactory.makeMethodCall(DispatchType.mcObject);
+				
+		ASTNode caller = ctx.object.accept(this);
+		method.object = caller;
+		method.addChildAndSetAsParent(caller);
+	
+		ASTNode methodName = ASTFactory.makeID(ctx.methodName);
+		method.methodName = methodName;
+		method.addChildAndSetAsParent(methodName);
+		
+		for(ExprContext param: ctx.expr()) {
+			ASTNode pNode = param.accept(this);
+			methodName.addChildAndSetAsParent(pNode);
+		}
+		
+	
+		return method;
 	}
+	
+	
 	@Override
 	public ASTNode visitLocalMethodCall(LocalMethodCallContext ctx) {
 		return ASTFactory.makeMethodCall(DispatchType.mcLocal);
 	}
+	
+
 
 }

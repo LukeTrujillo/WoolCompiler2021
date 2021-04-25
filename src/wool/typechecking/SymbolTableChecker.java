@@ -1,7 +1,9 @@
 package wool.typechecking;
 
-import wool.ast.ASTPrinter;
-
-public class SymbolTableChecker extends ASTPrinter {
+public class SymbolTableChecker {
+	
+	public void checkProgramNode() {
+		
+	}
 
 }

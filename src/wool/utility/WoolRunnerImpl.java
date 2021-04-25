@@ -71,7 +71,7 @@ public class WoolRunnerImpl implements WoolRunner
         ASTBuilder builder = new ASTBuilder();
         ast = parseTree.accept(builder);
         
- 
+        System.out.println("here: " + ast.getNodeType());
         return ast;
    }
 //    
@@ -79,8 +79,7 @@ public class WoolRunnerImpl implements WoolRunner
     public ASTNode typecheck()
     {
         createAST();
-        ast.accept(new SymbolTableChecker());
-        ast.accept(new TypeChecker());
+       ast.accept(new TypeChecker());
         return ast;
     }
     

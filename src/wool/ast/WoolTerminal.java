@@ -4,6 +4,7 @@ package wool.ast;
 import org.antlr.v4.runtime.Token;
 
 import wool.symbol.bindings.AbstractBinding;
+import wool.typechecking.TypeChecker;
 
 public class WoolTerminal extends ASTNode{
 
@@ -27,5 +28,6 @@ public class WoolTerminal extends ASTNode{
 		this.terminalType = node;
 		
 	}
+	
 
 }

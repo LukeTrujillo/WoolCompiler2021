@@ -1,10 +1,11 @@
 package wool.ast;
 
 import wool.symbol.bindings.MethodBinding;
+import wool.typechecking.TypeChecker;
 
 public class WoolMethod extends ASTNode {
 	
-	private MethodBinding binding;
+	public MethodBinding binding;
 
 	public WoolMethod(MethodBinding binding) {
 		super(ASTNodeType.nMethod);

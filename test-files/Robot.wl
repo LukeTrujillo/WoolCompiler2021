@@ -1,9 +1,9 @@
 class Wheel {
 	
-	currentSpeed: int;
-	wheelDiameter: int;
+	currentSpeed: Int;
+	wheelDiameter: Int;
 
-	init(startSpeed: int, wheel: int) : Wheel {
+	intit(startSpeed: Int, wheel: Int) : Wheel {
 		{
 			currentSpeed <- startSpeed;
 			wheelDiameter <- wheel;
@@ -11,19 +11,19 @@ class Wheel {
 		}
 	}
 
-	setSpeed(speed: int) : Wheel {
+	setSpeed(speed: Int) : Wheel {
 		{
 			currentSpeed <- speed;
 			this;
 		}
 	}
 	
-	isMoving() : boolean {
+	isMoving() : Bool {
 	 	 { true; }
 	}
 	
-	getSpeed() : int { currentSpeed }
-	getWheelDiameter() : int { wheelDiameter }
+	getSpeed() : Int { { currentSpeed; }  }
+	getWheelDiameter() : Int { { wheelDiameter; } }
 }
 
 class Robot {
@@ -35,7 +35,7 @@ class Robot {
 	rightBack: Wheel <- new Wheel;
 	
 	
-	init(): boolean {
+	init(): Bool {
 		test: Wheel <- new Wheel;
 		{
 			leftFront.init(0, 2);
@@ -45,6 +45,6 @@ class Robot {
 			rightBack.init(0, 2);
 			
 			true;
-		} 
+		}
 	}
 }

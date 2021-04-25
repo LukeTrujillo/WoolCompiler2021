@@ -1,5 +1,7 @@
 package wool.ast;
 
-public class ASTPrinter {
+import wool.lexparse.WoolBaseVisitor;
+
+public class ASTPrinter extends WoolBaseVisitor<ASTNode> {
 
 }

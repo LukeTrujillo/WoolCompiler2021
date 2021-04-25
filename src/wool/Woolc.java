@@ -46,7 +46,7 @@ public class Woolc
     {
         fileNames = new ArrayList<String>();
         outputDirectory = ".";        // default
-        phase = PARSE;
+        phase = SEMANTIC;
         displayParseTree = true;
         displayGUI = false;
         displayAST = true;
@@ -79,8 +79,8 @@ public class Woolc
         switch (phase) {
             case PARSE: runner.parse(); break;
 //            case AST: runner.createAST(); break;
-            //case SEMANTIC: runner.typecheck(); break;
-            case SEMANTIC: runner.createAST(); break;
+            case SEMANTIC: runner.typecheck(); break;
+           //case SEMANTIC: runner.createAST(); break;
 //            case IR: runner.makeIR(); break;
 //            case COMPILE: 
 //                bytecode = runner.compile(); 

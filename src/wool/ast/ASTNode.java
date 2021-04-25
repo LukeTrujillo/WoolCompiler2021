@@ -5,8 +5,11 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
+import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.tables.SymbolTable;
 import wool.symbol.tables.TableManager;
+import wool.typechecking.SymbolTableChecker;
+import wool.typechecking.TypeChecker;
 
 public abstract class ASTNode {
 	
@@ -36,8 +39,11 @@ public abstract class ASTNode {
 	}
 	
 	public void addChildAndSetAsParent(ASTNode child) { 
-		this.children.add(child);
-		child.setParent(this);
+		
+		if(child != null) {
+			this.children.add(child);
+			child.setParent(this);
+		}
 	}
 	
 	public ASTNode getChild(int i) { return children.get(i); }
@@ -47,23 +53,26 @@ public abstract class ASTNode {
 	}
 
 	public String accept(ASTPrinter printer) {
+
+		System.out.println(nodeType.name());
 		
-		if(this instanceof WoolType) {
-			System.out.print("WoolType node");
-		} else if(this instanceof WoolMethod) {
-			System.out.print("WoolMethod node");
-		}
-		
-		
-		System.out.print(" children={" );
 		for(ASTNode node : children) {
 			node.accept(printer);
 			
 		}
-		System.out.print("}");
 		
 		System.out.println();
 		return nodeClass;
+		
+	}
+	
+	public List<ASTNode> getChildren() { return this.children; }
+	
+	public ASTNodeType getNodeType() { return this.nodeType; }
+	
+	public AbstractBinding accept(TypeChecker typeChecker) {
+		AbstractBinding binding = typeChecker.visit(this);
+		return binding;
 		
 	}
 }

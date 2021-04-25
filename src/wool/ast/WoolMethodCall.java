@@ -1,6 +1,7 @@
 package wool.ast;
 
 import wool.symbol.bindings.AbstractBinding;
+import wool.typechecking.TypeChecker;
 
 public class WoolMethodCall extends ASTNode {
 	
@@ -23,6 +24,5 @@ public class WoolMethodCall extends ASTNode {
 		return dispatch == DispatchType.mcLocal ? getChild(0) : getChild(1);
 	}
 
-	
 
 }

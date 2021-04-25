@@ -1,6 +1,7 @@
 package wool.ast;
 
 import wool.symbol.bindings.ObjectBinding;
+import wool.typechecking.TypeChecker;
 
 public class WoolVariable extends ASTNode {
 
@@ -17,5 +18,7 @@ public class WoolVariable extends ASTNode {
 	protected String extraInfo() {
 		return binding == null ? "" : (", binding: " + binding);
 	}
+	
+
 
 }
