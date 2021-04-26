@@ -4,7 +4,9 @@ import java.util.List;
 
 import wool.ast.*;
 import wool.ast.WoolMethodCall.DispatchType;
+import wool.ast.WoolTerminal.TerminalType;
 import wool.symbol.bindings.AbstractBinding;
+import wool.symbol.bindings.ClassBinding;
 import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
 import wool.symbol.tables.TableManager;
@@ -13,6 +15,7 @@ import wool.utility.WoolException;
 public class TypeChecker {
 	
 	TableManager tm;
+	ClassBinding currentClassBinding;
 	
 	public TypeChecker() {
 		tm = TableManager.getInstance();
@@ -52,6 +55,11 @@ public class TypeChecker {
 			n.accept(this);
 		}
 		
+		boolean allowed = isTypeAToTypeBAllowed(node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
+		
+		if(!allowed) throw new WoolException("Type " + node.getSetValue().binding.getSymbolType() + " cannot be set of a variable of Type " + node.getIdentifer().binding.getSymbolType());
+		
+		
 		return null;
 	}
 	
@@ -78,40 +86,29 @@ public class TypeChecker {
 		 AbstractBinding search = tm.getClassTable().lookup(returnType);
 		if(search == null) throw new WoolException("Return type \"" + returnType + "\" not registered in method " + node.binding.getSymbol());
 		
-		tm.enterScopeInClass();
+		
 		
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
-		
-		tm.exitScopeInClass();
-		
+	
 		return null;
 	}
 	
 	public AbstractBinding visit(WoolMethodCall node) {
+	
+		AbstractBinding binding = node.object.accept(this);
 		
-		System.out.println("here69");
-		//Need to first find the class that the method is part of
-		ObjectBinding caller = (ObjectBinding) node.getObject().accept(this);
-		MethodBinding method = (MethodBinding) node.getMethodName().accept(this);
+		ClassBinding methodTarget = tm.getClassBindingFromString(binding.getSymbolType());
 		
-		if(node.dispatch == DispatchType.mcLocal) {
-			 //unsure how to check here
-			
-		} else if(node.dispatch == DispatchType.mcObject) {
-			String classWhereDefined = method.getClassWhereDefined();
-			String symbolType = caller.getSymbolType();
-			
-			if(classWhereDefined != symbolType) throw new WoolException("Type variable calling undefined method");
-		}
+		System.out.println(node.methodName.token.getText());
 		
+		MethodBinding mb = methodTarget.getClassDescriptor().getMethodBinding(node.methodName.token.getText());
 		
+		if(mb == null) throw new WoolException("Object call does not contain method");
 		
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
-		}
-		
+		node.methodName.binding = mb;
+
 		return null;
 	}
 	
@@ -124,35 +121,31 @@ public class TypeChecker {
 	}
 	
 	public AbstractBinding visit(WoolProgram node) {
-		tm.enterScopeInClass();
+
 		
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
 		
-		tm.exitScopeInClass();
-
+		
 		return null;
 	}
 	
 	public AbstractBinding visit(WoolTerminal node) {
 		
-		
-		
-		ObjectBinding nodeBinding = (ObjectBinding) node.binding;
 		if(node.binding == null) {
-			//AbstractBinding binding = tm.getCurrentTable().lookup(node)
+			if(node.terminalType == TerminalType.tID) {
+				node.binding = currentClassBinding.getClassDescriptor().getVariable(node.token.getText());
+			} else if(node.terminalType == TerminalType.tType) {
+				node.binding = tm.getClassTable().lookup(node.token.getText());
+			}
 		}
 		
-		
-		AbstractBinding search = tm.getClassTable().lookup(node.binding.getSymbolType());
-		if(search == null) throw new WoolException("Type \"" + node.binding.getSymbolType() + "\" not defined");
-		
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
+		if(node.binding == null && node.terminalType != TerminalType.tMethod) {
+			throw new WoolException("Undefined variable " + node.token.getText() + " used");
 		}
 		
-		return search;
+		return node.binding;
 	}
 	
 	public AbstractBinding visit(WoolVariable node) {
@@ -179,6 +172,8 @@ public class TypeChecker {
 	}
 
 	public AbstractBinding visit(WoolType node) {
+		
+		currentClassBinding = node.binding;
 	
 		
 		for(ASTNode n : node.getChildren()) {
@@ -193,8 +188,18 @@ public class TypeChecker {
 		}
 		
 		return null;
-		
 	}
 	
+	
+	private boolean isTypeAToTypeBAllowed(String aType, String bType) {
+		ClassBinding aB = (ClassBinding) tm.getClassTable().lookup(aType);
+		ClassBinding bB = (ClassBinding) tm.getClassTable().lookup(bType);
+		
+		if(aB == bB) return true;
+		
+		if(aB == null || bB == null) return false;
+		
+		return isTypeAToTypeBAllowed(aB.getClassDescriptor().inherits, bType);
+	}
 
 }

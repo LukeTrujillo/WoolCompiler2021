@@ -17,7 +17,7 @@ classBody: OPEN_BRACKET (variables+=variableDef | methods+=method)* CLOSE_BRACKE
 
 method: methodName=ID '(' (formals+=formal (',' formals+=formal)*)? ')' ':' type=typeName  OPEN_BRACKET vars+=variableDef* expr CLOSE_BRACKET ;
 	
-variableDef: name=ID ':' type=typeName ('<-' initializer=expr)? EL;
+variableDef: dec=formal ('<-' initializer=expr)? EL;
 
 formal: name=ID ':' type=typeName;
 
@@ -38,8 +38,8 @@ expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #Ful
 	| <assoc=right> left=expr ('=' | '~=') right=expr # EqExpr
     | <assoc=right> '~' expr # NotExpr
 	| '(' expr ')' #ParenExpr
-	| ID '<-' expr #AssignExpr
-	| ID #IDExpr
+	| variableName=ID '<-' expr #AssignExpr
+	| name=ID #IDExpr
 	| NUM #NumExpr
 	| STRING #StrExpr
 	| 'true' #TrueExpr

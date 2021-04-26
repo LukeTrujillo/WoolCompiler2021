@@ -34,7 +34,7 @@ public class ClassDescriptor {
 	}
 
 	public void addMethod(MethodBinding method) {
-		methods.put(method.getSymbol(), method);
+		methods.put(method.getMethodDescriptor().methodName, method);
 	}
 	
 	public ObjectBinding getVariable(String id)

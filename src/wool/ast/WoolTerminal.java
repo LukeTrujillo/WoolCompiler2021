@@ -11,7 +11,6 @@ public class WoolTerminal extends ASTNode{
 	public static enum TerminalType {tInt, tStr, tBool, tID, tMethod, tType};
 		
 	public TerminalType terminalType;
-	public AbstractBinding binding;
 	
 	public WoolTerminal(AbstractBinding binding) {
 		super(ASTNodeType.nTerminal);
@@ -29,5 +28,10 @@ public class WoolTerminal extends ASTNode{
 		
 	}
 	
+	@Override
+	public String printNicely() { 
+		return nodeType.name() + "(Terminal Type: " + terminalType.name() + ", Binding: " + binding + ")"; 
+	
+	}
 
 }

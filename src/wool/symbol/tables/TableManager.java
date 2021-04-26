@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.antlr.v4.runtime.CommonTokenFactory;
 import org.antlr.v4.runtime.Token;
 
+import wool.lexparse.WoolParser.ClassDefContext;
 import wool.lexparse.WoolParser.FormalContext;
 import wool.lexparse.WoolParser.MethodContext;
 import wool.lexparse.WoolParser.VariableDefContext;
@@ -186,7 +187,7 @@ public class TableManager {
 		return mb;
 	}
 	
-	public ObjectBinding registerVariable(VariableDefContext ctx) {
+	public ObjectBinding registerVariable(FormalContext ctx) {
 		String name = ctx.name.getText();
 		String type = ctx.typeName().getText();
 		
@@ -202,7 +203,6 @@ public class TableManager {
 	    
 	    return b;
 	}
-	
 	
 		
 	public String getCurrentClassName() {
@@ -249,4 +249,7 @@ public class TableManager {
         sb.append("\n-----------------------------------------------");
         return sb.toString();
 	}
+
+
+
 }

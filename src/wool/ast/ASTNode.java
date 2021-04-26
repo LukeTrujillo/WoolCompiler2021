@@ -8,17 +8,18 @@ import org.antlr.v4.runtime.Token;
 import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.tables.SymbolTable;
 import wool.symbol.tables.TableManager;
-import wool.typechecking.SymbolTableChecker;
 import wool.typechecking.TypeChecker;
 
 public abstract class ASTNode {
 	
 	protected ASTNodeType nodeType;
 	protected String nodeClass;
-	protected ASTNode parent;
+	public ASTNode parent;
 	protected List<ASTNode> children;
 	
-	protected Token token;
+	public AbstractBinding binding;
+	
+	public Token token;
 	protected SymbolTable scope;
 	
 	public ASTNode() {
@@ -54,7 +55,7 @@ public abstract class ASTNode {
 
 	public String accept(ASTPrinter printer) {
 
-		System.out.println(nodeType.name());
+		System.out.println(this.printNicely());
 		
 		for(ASTNode node : children) {
 			node.accept(printer);
@@ -62,7 +63,7 @@ public abstract class ASTNode {
 		}
 		
 		System.out.println();
-		return nodeClass;
+		return null;
 		
 	}
 	
@@ -74,5 +75,8 @@ public abstract class ASTNode {
 		AbstractBinding binding = typeChecker.visit(this);
 		return binding;
 		
+	}
+	public String printNicely() {
+		return nodeType.name();
 	}
 }

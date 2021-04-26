@@ -25,4 +25,6 @@ public class WoolMethodCall extends ASTNode {
 	}
 
 
+	@Override
+	public String printNicely() { return nodeType.name() + "(" + children.size() + ")"; }
 }

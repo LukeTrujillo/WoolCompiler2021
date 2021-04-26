@@ -7,7 +7,6 @@ import org.antlr.v4.runtime.*;
 import wool.ast.ASTBuilder;
 import wool.ast.ASTNode;
 import wool.lexparse.*;
-import wool.typechecking.SymbolTableChecker;
 import wool.typechecking.TypeChecker;
 
 public class WoolRunnerImpl implements WoolRunner
@@ -79,7 +78,8 @@ public class WoolRunnerImpl implements WoolRunner
     public ASTNode typecheck()
     {
         createAST();
-       ast.accept(new TypeChecker());
+        //ast.accept(new SymbolTableChecker());
+        ast.accept(new TypeChecker());
         return ast;
     }
     

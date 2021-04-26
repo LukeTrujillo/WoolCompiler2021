@@ -3,18 +3,18 @@ class Wheel {
 	currentSpeed: Int;
 	wheelDiameter: Int;
 
-	intit(startSpeed: Int, wheel: Int) : Wheel {
+	init(startSpeed: Int, wheel: Int) : Wheel {
 		{
 			currentSpeed <- startSpeed;
 			wheelDiameter <- wheel;
-			this;
+			self;
 		}
 	}
 
 	setSpeed(speed: Int) : Wheel {
 		{
 			currentSpeed <- speed;
-			this;
+			self;
 		}
 	}
 	
