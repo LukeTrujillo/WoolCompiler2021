@@ -40,11 +40,11 @@ expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #Ful
 	| '(' expr ')' #ParenExpr
 	| variableName=ID '<-' expr #AssignExpr
 	| name=ID #IDExpr
-	| NUM #NumExpr
-	| STRING #StrExpr
-	| 'true' #TrueExpr
-	| 'false' #FalseExpr
-	| 'null' #NullExpr
+	| niceNumber=NUM #NumExpr
+	| s=STRING #StrExpr
+	| t='true' #TrueExpr
+	| f='false' #FalseExpr
+	| n='null' #NullExpr
 	;
 
 selectAlt :   expr ':' expr ';' ;

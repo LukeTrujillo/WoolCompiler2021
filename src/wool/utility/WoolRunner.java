@@ -12,10 +12,15 @@
 
 package wool.utility;
 
+import java.util.LinkedList;
+import java.util.Map;
+
 import org.antlr.v4.runtime.*;
 
 import wool.ast.ASTNode;
 import wool.lexparse.*;
+
+import wool.codegen.*;
 
 /**
  * The WoolRunner is an object produced by the WoolFactory. It provides handles
@@ -57,11 +62,11 @@ public interface WoolRunner
 //     * Do typechecking and then create the IR stream.
 //     * @return
 //     */
-//    LinkedList<IRinstruction> makeIR();
+    	LinkedList<irInstruction> makeIR();
 //    
 //    /**
 //     * Compile the source code.
 //     * @return the class file bytecode for each class that can be written.
 //     */
-//    Map<String, byte[]> compile();
+    	Map<String, byte[]> compile();
 }

@@ -12,6 +12,7 @@ import wool.lexparse.WoolParser.ClassBodyContext;
 import wool.lexparse.WoolParser.ClassDefContext;
 import wool.lexparse.WoolParser.ExprContext;
 import wool.lexparse.WoolParser.ExprListContext;
+import wool.lexparse.WoolParser.FalseExprContext;
 import wool.lexparse.WoolParser.FormalContext;
 import wool.lexparse.WoolParser.FullMethodCallContext;
 import wool.lexparse.WoolParser.IDExprContext;
@@ -20,7 +21,11 @@ import wool.lexparse.WoolParser.LocalMethodCallContext;
 
 import wool.lexparse.WoolParser.MethodContext;
 import wool.lexparse.WoolParser.NewExprContext;
+import wool.lexparse.WoolParser.NullExprContext;
+import wool.lexparse.WoolParser.NumExprContext;
 import wool.lexparse.WoolParser.ProgramContext;
+import wool.lexparse.WoolParser.StrExprContext;
+import wool.lexparse.WoolParser.TrueExprContext;
 import wool.lexparse.WoolParser.VariableDefContext;
 import wool.lexparse.WoolParser.WhileExprContext;
 import wool.symbol.bindings.AbstractBinding;
@@ -69,7 +74,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		ClassBodyContext body = ctx.classBody(); //maket
 		
 		for(VariableDefContext variable : body.variables) {
-			WoolVariable varAST = (WoolVariable) this.visitVariableDef(variable);
+			ASTNode varAST = this.visitVariableDef(variable);
 			type.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
 			
 		}
@@ -134,14 +139,46 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitVariableDef(VariableDefContext ctx) {
+		
 		ASTNode formal = ctx.dec.accept(this);
 		
 		ObjectBinding binding =  (ObjectBinding) formal.binding; //add to the symbol table
 		WoolVariable variable = ASTFactory.makeWoolVariable(binding);
 		
 		if(ctx.initializer != null) {
+			WoolAssignExpr expr = ASTFactory.makeAssignExpr();
+			
+			expr.addChildAndSetAsParent(variable);
+			
+			
 			ASTNode node = ctx.expr().accept(this);
-			variable.addChildAndSetAsParent(node);
+			
+			if(node == null) { //then it is likely a terminal
+			
+				if (ctx.initializer instanceof NumExprContext) {
+					
+					node = ASTFactory.makeConstant(((NumExprContext) ctx.initializer).niceNumber, TerminalType.tInt);
+					expr.addChildAndSetAsParent(node);
+				}
+				
+				if(ctx.initializer instanceof TrueExprContext) {
+
+					node = ASTFactory.makeConstant(((TrueExprContext) ctx.initializer).t, TerminalType.tBool);
+					expr.addChildAndSetAsParent(node);
+				}
+				if(ctx.initializer instanceof FalseExprContext) {
+					node = ASTFactory.makeConstant(((FalseExprContext) ctx.initializer).f, TerminalType.tBool);
+					expr.addChildAndSetAsParent(node);
+				}
+				
+				if(ctx.initializer instanceof StrExprContext) {
+					node = ASTFactory.makeConstant(((StrExprContext) ctx.initializer).s, TerminalType.tStr);
+					expr.addChildAndSetAsParent(node);
+				}
+				//TODO: might need to add null here
+			}
+			
+			return expr;
 		}
 		
 		return variable;
@@ -181,6 +218,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 		return expr;
 	}
+	
 	
 	@Override
 	public ASTNode visitFullMethodCall(FullMethodCallContext ctx) {

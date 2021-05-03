@@ -11,6 +11,7 @@ public class WoolVariable extends ASTNode {
 		super(ASTNodeType.nVariable);
 
 		this.binding = binding;
+		super.binding = binding;
 		this.nodeClass = binding.getSymbolType();
 	}
 	

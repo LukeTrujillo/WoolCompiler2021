@@ -11,8 +11,9 @@ import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
 import wool.symbol.tables.TableManager;
 import wool.utility.WoolException;
+import wool.ast.*;
 
-public class TypeChecker {
+public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	
 	TableManager tm;
 	ClassBinding currentClassBinding;
@@ -20,42 +21,15 @@ public class TypeChecker {
 	public TypeChecker() {
 		tm = TableManager.getInstance();
 	}
-	
-	public AbstractBinding visit(ASTNode node) {
-		
-		if(node instanceof WoolProgram) return this.visit((WoolProgram) node);
-		
-		if(node instanceof WoolMethod) return this.visit((WoolMethod) node);
-		
-		if(node instanceof WoolType) return this.visit((WoolType) node);
-		
-		if(node instanceof WoolMethodCall) return this.visit((WoolMethodCall) node);
-		
-		if(node instanceof WoolTerminal) return this.visit((WoolTerminal) node);
-		
-		if(node instanceof WoolVariable) return this.visit((WoolVariable) node);
-		
-		if(node instanceof WoolWhile) return this.visit((WoolWhile) node);
-		
-		if(node instanceof WoolAssignExpr) return this.visit((WoolAssignExpr) node);
-		
-		if(node instanceof WoolExprList) return this.visit((WoolExprList) node);
-		
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
-		}
 
-		return null;
-	}
-	
-	
+	@Override
 	public AbstractBinding visit(WoolAssignExpr node) {
 		
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
 		
-		boolean allowed = isTypeAToTypeBAllowed(node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
+		boolean allowed = isTypeAToTypeBAllowed( node.getSetValue().binding.getSymbolType(), ((WoolVariable)node.getIdentifer()).binding.getSymbolType());
 		
 		if(!allowed) throw new WoolException("Type " + node.getSetValue().binding.getSymbolType() + " cannot be set of a variable of Type " + node.getIdentifer().binding.getSymbolType());
 		
@@ -63,14 +37,7 @@ public class TypeChecker {
 		return null;
 	}
 	
-	public AbstractBinding visit(WoolExprList node) {
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
-		}
-		
-		return null;
-	}
-	
+	@Override
 	public AbstractBinding visit(WoolMethod node) {
 		//verify the arguments
 		List<String> args = node.binding.getMethodDescriptor().getArgumentTypes();
@@ -138,10 +105,18 @@ public class TypeChecker {
 				node.binding = currentClassBinding.getClassDescriptor().getVariable(node.token.getText());
 			} else if(node.terminalType == TerminalType.tType) {
 				node.binding = tm.getClassTable().lookup(node.token.getText());
+			} else if(node.terminalType == TerminalType.tInt) {
+				node.binding = tm.getClassTable().lookup("Int");
+			} else if(node.terminalType == TerminalType.tBool) {
+				node.binding = tm.getClassTable().lookup("Bool");
+			} else if(node.terminalType == TerminalType.tStr) {
+				node.binding = tm.getClassTable().lookup("Str");
 			}
+			//TODO: might need to add null type
+			
 		}
 		
-		if(node.binding == null && node.terminalType != TerminalType.tMethod) {
+		if(node.binding == null && (node.terminalType != TerminalType.tMethod)) {
 			throw new WoolException("Undefined variable " + node.token.getText() + " used");
 		}
 		

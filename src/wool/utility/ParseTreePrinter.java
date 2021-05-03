@@ -77,7 +77,7 @@ public class ParseTreePrinter extends WoolBaseVisitor<String>
 	public String visitVariableDef(VariableDefContext ctx)
 	{
 		indent();
-		addText(ctx.ID().getText(), " : ", ctx.type.getText());
+		addText(ctx.dec.ID().getText(), " : ", ctx.dec.type.getText());
 		if (ctx.initializer != null) {
 			addText(" <- ", ctx.initializer.accept(this));
 		}

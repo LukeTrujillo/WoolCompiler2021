@@ -16,6 +16,10 @@ import java.util.*;
 import javax.swing.JFrame;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.util.ASMifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import wool.ast.ASTPrinter;
 import wool.lexparse.WoolParser;
@@ -45,7 +49,7 @@ public class Woolc
     public Woolc()
     {
         fileNames = new ArrayList<String>();
-        outputDirectory = ".";        // default
+        outputDirectory = "woolcode";        // default
         phase = SEMANTIC;
         displayParseTree = true;
         displayGUI = false;
@@ -82,10 +86,10 @@ public class Woolc
             case SEMANTIC: runner.typecheck(); break;
            //case SEMANTIC: runner.createAST(); break;
 //            case IR: runner.makeIR(); break;
-//            case COMPILE: 
-//                bytecode = runner.compile(); 
-//                writeOutput();
-//                break;
+            case COMPILE: 
+            	bytecode = runner.compile(); 
+                writeOutput();
+                break;
             default: 
                 System.err.println("Phase not yet implemented: " + phase);
                 System.exit(0);
@@ -95,11 +99,17 @@ public class Woolc
     private void writeOutput() throws Exception
     {
         if (bytecode != null) {
+        	
+        	
+        	
             for (String s : bytecode.keySet()) {
-                String classFilePath =  outputDirectory + "/cool/" + s + ".class";
+                String classFilePath =  outputDirectory + "/wool/" + s + ".class";
                 FileOutputStream fos = new FileOutputStream(classFilePath);
                 fos.write(bytecode.get(s));
                 fos.close();
+                
+                
+
             }
         }
     }
@@ -190,6 +200,7 @@ public class Woolc
                     case "ast": phase = AST; break;
                     case "semantic": phase = SEMANTIC; break;
                     case "ir": phase = IR; break;
+                    case "compile": phase = COMPILE; break;
                     default: throw new RuntimeException("Invalid phase");
                 }
                 break;

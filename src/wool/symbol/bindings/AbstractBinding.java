@@ -13,7 +13,10 @@ public abstract class AbstractBinding {
 
 	protected String classWhereDefined;
 	public Token token;
-	protected int address;
+	public int address;
+	
+	private static int nextAddress = 0;
+	
 	
 	public AbstractBinding(String symbol, String symbolType, BindingType bindingType, Token token) {
 		this.symbol = symbol;
@@ -22,7 +25,9 @@ public abstract class AbstractBinding {
 		this.token = token;
 		
 		this.classWhereDefined = null;
-		this.address = NO_ADDRESS;
+		this.address = nextAddress;
+		
+		nextAddress++;
 	}
 	
 	

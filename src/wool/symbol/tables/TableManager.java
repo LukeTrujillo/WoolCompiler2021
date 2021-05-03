@@ -164,19 +164,14 @@ public class TableManager {
 		String typeName = ctx.typeName().getText();
 		
 		String[] argTypes = new String[ctx.formal().size()];
-		
-		int index = 0;
-		for(FormalContext fc : ctx.formals) {
-			argTypes[index] = fc.type.getText();
-			index = index + 1;
-		}
+	
 	
 		if (currentClassBinding.getClassDescriptor().getMethodBinding(methodName) != null) {
 			throw new WoolException(
 					"Method " + methodName + " has already been defined in class " + currentClassName);
 		}
 		
-		MethodDescriptor md = new MethodDescriptor(methodName, typeName, argTypes);
+		MethodDescriptor md = new MethodDescriptor(methodName, typeName);
 		
 		MethodBinding mb = MethodBinding.makeMethodBinding(md, ctx.methodName, currentClassName);
 		mb.setClassWhereDefined(currentClassName);

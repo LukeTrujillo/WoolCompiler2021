@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
+import wool.codegen.IRCreator;
 import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.tables.SymbolTable;
 import wool.symbol.tables.TableManager;
@@ -78,5 +79,9 @@ public abstract class ASTNode {
 	}
 	public String printNicely() {
 		return nodeType.name();
+	}
+
+	public void accept(IRCreator irc) {
+		irc.visit(this);
 	}
 }
