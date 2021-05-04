@@ -32,6 +32,7 @@ import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.bindings.ClassBinding;
 import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
+import wool.symbol.descriptors.MethodDescriptor;
 import wool.symbol.tables.TableManager;
 import wool.utility.WoolFactory;
 
@@ -73,11 +74,42 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		ClassBodyContext body = ctx.classBody(); //maket
 		
+		
+		MethodDescriptor constructorDescriptor = new MethodDescriptor("<init>", null);
+		MethodBinding methodBinding = new MethodBinding(constructorDescriptor, null);
+		WoolMethod constructor =  ASTFactory.makeWoolMethod(methodBinding);
+		
+		
+		WoolExprList exprList = ASTFactory.makeExprList();
+		constructor.addChildAndSetAsParent(exprList);
+		
+		
 		for(VariableDefContext variable : body.variables) {
 			ASTNode varAST = this.visitVariableDef(variable);
-			type.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
 			
+			if(varAST instanceof WoolVariable) {
+				type.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
+				continue;
+			}
+		
+			//By here it has to be an assign but lets double check
+			
+			if(varAST instanceof WoolAssignExpr) {
+				type.addChildAndSetAsParent(((WoolAssignExpr) varAST).getIdentifer()); //add the variable node to the top
+				
+				WoolTerminal variableName = ASTFactory.makeID(((WoolAssignExpr) varAST).getIdentifer().binding);
+				WoolAssignExpr newAssign = ASTFactory.makeAssignExpr();
+				
+				newAssign.addChildAndSetAsParent(variableName);
+				newAssign.addChildAndSetAsParent(((WoolAssignExpr) varAST).getSetValue());
+				
+				exprList.addChildAndSetAsParent(newAssign);
+			}
 		}
+		
+		type.addChildAndSetAsParent(constructor);
+
+		
 		
 		for(MethodContext m : body.methods) {
 			ASTNode methodAST = this.visitMethod(m);
@@ -115,26 +147,47 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 			method.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
 		}
 		
-		if (ctx.expr() instanceof ExprListContext) {
-			ExprListContext context = (ExprListContext) ctx.expr();
-			
-			for(ExprContext expr : context.expr()) {
-				ASTNode node = expr.accept(this);
-				method.addChildAndSetAsParent(node);
-			}
-			
-		}
-
+		
+		ASTNode child = this.visitExprContext(ctx.expr());
+		method.addChildAndSetAsParent(child);
+		
 		
 		tm.exitScopeInClass();
 		
 		return method;
 	}
 	
+	public ASTNode visitExprContext(ExprContext ctx) {
+		
+		if(ctx instanceof ExprListContext) return ((ExprListContext) ctx).accept(this);
+		
+		if(ctx instanceof FalseExprContext) return ASTFactory.makeConstant(((FalseExprContext)ctx).f, TerminalType.tBool);
+		if(ctx instanceof TrueExprContext) return ASTFactory.makeConstant(((TrueExprContext)ctx).t, TerminalType.tBool);
+		if(ctx instanceof StrExprContext) return ASTFactory.makeConstant(((StrExprContext)ctx).s, TerminalType.tStr);
+		if(ctx instanceof NumExprContext) return ASTFactory.makeConstant(((NumExprContext)ctx).niceNumber, TerminalType.tInt);
+		
+		if(ctx instanceof IDExprContext) return ASTFactory.makeID(((IDExprContext) ctx).name);
+		
+		if(ctx instanceof AssignExprContext) return ((AssignExprContext) ctx).accept(this);
+		
+		return null;
+	}
+	
+	@Override
+	public ASTNode visitExprList(ExprListContext ctx) {
+		WoolExprList node = ASTFactory.makeExprList();
+		
+		for(ExprContext expr : ctx.exprs) {
+			ASTNode child = expr.accept(this);
+			node.addChildAndSetAsParent(child);
+		}
+		return node;
+	}
+	
 	@Override
 	public ASTNode visitFormal(FormalContext ctx) {
 		ObjectBinding binding = tm.registerVariable(ctx);
-		return ASTFactory.makeID(binding);
+		return ASTFactory.makeWoolVariable(binding);
 	}
 	
 	@Override
@@ -210,7 +263,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		WoolTerminal variableName = ASTFactory.makeID(ctx.variableName);
 		
-		ASTNode internalExpr = ctx.expr().accept(this);
+		ASTNode internalExpr = this.visitExprContext(ctx.expr());
 
 		
 		expr.addChildAndSetAsParent(variableName);

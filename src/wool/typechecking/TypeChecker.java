@@ -17,9 +17,12 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	
 	TableManager tm;
 	ClassBinding currentClassBinding;
+	WoolMethod currentMethod;
 	
 	public TypeChecker() {
 		tm = TableManager.getInstance();
+		
+		currentMethod = null;
 	}
 
 	@Override
@@ -29,7 +32,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			n.accept(this);
 		}
 		
-		boolean allowed = isTypeAToTypeBAllowed( node.getSetValue().binding.getSymbolType(), ((WoolVariable)node.getIdentifer()).binding.getSymbolType());
+		boolean allowed = isTypeAToTypeBAllowed( node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
 		
 		if(!allowed) throw new WoolException("Type " + node.getSetValue().binding.getSymbolType() + " cannot be set of a variable of Type " + node.getIdentifer().binding.getSymbolType());
 		
@@ -39,6 +42,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	
 	@Override
 	public AbstractBinding visit(WoolMethod node) {
+		currentMethod = node;
 		//verify the arguments
 		List<String> args = node.binding.getMethodDescriptor().getArgumentTypes();
 		
@@ -51,13 +55,17 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		 String returnType = node.binding.getMethodDescriptor().returnType;
 		 
 		 AbstractBinding search = tm.getClassTable().lookup(returnType);
+		 
+		 if(node.binding.getMethodDescriptor().getMethodName().equalsIgnoreCase("<init>")) {
+			 return null;
+		 }
+		 
 		if(search == null) throw new WoolException("Return type \"" + returnType + "\" not registered in method " + node.binding.getSymbol());
-		
-		
 		
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
+		currentMethod = null;
 	
 		return null;
 	}
@@ -101,8 +109,23 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	public AbstractBinding visit(WoolTerminal node) {
 		
 		if(node.binding == null) {
-			if(node.terminalType == TerminalType.tID) {
-				node.binding = currentClassBinding.getClassDescriptor().getVariable(node.token.getText());
+
+			
+			
+			if(node.terminalType == TerminalType.tID) { //now start checking at class definitons
+				
+				if(currentMethod != null) {
+					int index = currentMethod.argumentDefinedHereAtChildIndex(node.token.getText());
+					
+					if(index != -1)
+						node.binding = currentMethod.getChild(index).binding;
+				}
+					
+				if(node.binding == null)
+					node.binding = currentClassBinding.getClassDescriptor().getVariable(node.token.getText());
+				
+				
+				
 			} else if(node.terminalType == TerminalType.tType) {
 				node.binding = tm.getClassTable().lookup(node.token.getText());
 			} else if(node.terminalType == TerminalType.tInt) {
@@ -112,7 +135,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			} else if(node.terminalType == TerminalType.tStr) {
 				node.binding = tm.getClassTable().lookup("Str");
 			}
-			//TODO: might need to add null type
+		
 			
 		}
 		

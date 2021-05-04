@@ -5,17 +5,22 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import wool.ast.ASTFactory;
 import wool.ast.ASTNode;
 import wool.ast.ASTVisitor;
 import wool.ast.WoolAssignExpr;
 import wool.ast.WoolMethod;
 import wool.ast.WoolProgram;
 import wool.ast.WoolTerminal;
+import wool.ast.WoolTerminal.TerminalType;
 import wool.ast.WoolType;
 import wool.ast.WoolVariable;
+import wool.symbol.bindings.AbstractBinding;
+import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
 import wool.symbol.descriptors.ClassDescriptor;
 import wool.symbol.descriptors.MethodDescriptor;
+import wool.symbol.tables.TableManager;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -32,18 +37,25 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	FieldVisitor fv;
 	
 	ClassDescriptor currentClass;
+	WoolMethod currentMethod;
 	
-	Stack<Label> guardLabelStack;
-	Stack<Label> returnLabelStack;
 	
+	int nextLocalAddr;
+	
+	boolean inConstructor;
+
 	
 	private final static String DEFAULT_PACKAGE = "wool/";
 	
+	private TableManager tm;
 	
 	public IRCreator() {
 		classes = new HashMap<String, byte[]>();
+		currentMethod = null;
+		inConstructor = false;
+		
+		this.tm = TableManager.getInstance();
 	}
-	
 
 	@Override
 	public byte[] visit(WoolProgram node) {
@@ -58,8 +70,73 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		return null;
 	}
 	
+	
+	@Override
+	public byte[] visit(WoolMethod node) {
+		nextLocalAddr = 0;
+		
+		MethodDescriptor descriptor = node.binding.getMethodDescriptor();
+		
+		String signature = this.getMethodTypeString(descriptor);
+		mv = cw.visitMethod(ACC_PUBLIC, descriptor.methodName, signature, null, null);
+		mv.visitCode();
+		
+		if(node.binding.getMethodDescriptor().methodName == "<init>") {
+			inConstructor = true;
+			mv.visitVarInsn(ALOAD, 0);
+			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + currentClass.inherits, "<init>", "()V", false);
+		}
+		
+		nextLocalAddr = 1 + descriptor.argumentTypes.size();
+		
+		currentMethod = node;
+		visitChildren(node); //TODO this may cause issue with variables under method dec but above expr list
+		currentMethod = null;
+		
+		inConstructor = false;
+		
+		mv.visitInsn(methodReturn(descriptor.returnType)); //method return type
+		mv.visitMaxs(ClassWriter.COMPUTE_FRAMES, ClassWriter.COMPUTE_MAXS);
+		mv.visitEnd();
+		return null;
+	}
+	
+	private int methodReturn(String returnType) {
+		
+		if(returnType == null) return RETURN;
+		
+		switch(returnType) {
+		case "Bool":
+		case "Int": return IRETURN;
+		default: return ARETURN;
+		}
+		
+	}
+
+
 	@Override
 	public byte[] visit(WoolAssignExpr node) {
+		
+		WoolTerminal setThis = (WoolTerminal)node.getIdentifer();
+		ASTNode withThis = node.getSetValue();
+
+		if(currentMethod != null) {
+			int index = currentMethod.argumentDefinedHereAtChildIndex(setThis.binding.symbol);
+			
+			if(index == -1) {
+				mv.visitIntInsn(ALOAD, 0);
+			}
+			
+			withThis.accept(this); //whatever the value is should be on the TOS
+			
+			if(index != -1) { //it is a local variable
+				mv.visitIntInsn(ISTORE, index + 1);	
+				return null;
+			}
+			
+		}
+		
+		mv.visitFieldInsn(PUTFIELD, DEFAULT_PACKAGE + currentClass.className, setThis.binding.symbol, this.getTypeString(setThis.binding.getSymbolType()));
 		
 		return null; 
 	}
@@ -71,28 +148,47 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	public byte[] visit(WoolVariable node) {
 		ObjectBinding binding = node.binding;
 		
-		fv = cw.visitField(ACC_PROTECTED, binding.symbol, this.getTypeString(binding.getSymbolType()), null, null);
-		fv.visitEnd();
+		if(currentMethod == null) {
+			fv = cw.visitField(ACC_PROTECTED, binding.symbol, this.getTypeString(binding.getSymbolType()), null, null);
+			fv.visitEnd();
+		}
 		
 		return null;
 	}
 	
 	@Override 
 	public byte[] visit(WoolTerminal node) {
-		mv.visitVarInsn(ALOAD, 0);
 		
-		switch(node.terminalType) {
-		case tInt:
-			int number = Integer.parseInt(node.token.getText());
-			mv.visitIntInsn(BIPUSH, 25);
-			break;
-		case tBool:
-			boolean guess = Boolean.parseBoolean(node.token.getText());
-			mv.visitInsn(guess? ICONST_1 : ICONST_0);
-			break;
-		}
-
-		
+	
+			/*
+			 * This switch statement puts clas vars onto the stack
+			 */
+			switch(node.terminalType) {
+			case tInt:
+				mv.visitIntInsn(BIPUSH, Integer.parseInt(node.token.getText()));
+				break;
+			
+			case tBool:
+				//mv.visitIntInsn(ALOAD, 0);
+				if(node.token.getText() == "true")
+					mv.visitInsn(ICONST_1);
+				else
+					mv.visitInsn(ICONST_0);
+				break;
+			case tID:
+				if(!isMethodLocal(node.binding))  {
+					mv.visitIntInsn(ALOAD, 0);
+					mv.visitFieldInsn(GETFIELD, DEFAULT_PACKAGE + currentClass.className, node.binding.getSymbol(), this.getTypeString(node.binding.getSymbolType()));
+				} else {
+					int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.getSymbol());
+					mv.visitIntInsn(ILOAD, index + 1);
+				}
+				break;
+			case tStr:
+				break;
+			case tType:
+				break;
+			}
 		
 		return null;
 	}
@@ -106,79 +202,22 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		
 		for(ASTNode child : node.getChildren()) {
-			if(child instanceof WoolAssignExpr) {
-				child = ((WoolAssignExpr) child).getIdentifer();
-			}
-			
 			if(child instanceof WoolVariable) {
-				WoolVariable variable = (WoolVariable) child;
-				
-				this.visit((WoolVariable) variable);
+				child.accept(this);
 			}
 		}
 		
-		
-		
-		MethodDescriptor md = node.binding.getClassDescriptor().getMethodDescriptor("init");
-		
-		mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-		mv.visitCode();
-		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + node.binding.getClassDescriptor().inherits, "<init>", "()V", false);
-		
-		//initalize the items in the variables
-		for(ASTNode child : node.getChildren()) {
-			if(child instanceof WoolAssignExpr) {
-				WoolAssignExpr expr = (WoolAssignExpr) child;
-			
-				//load the terminal
-				expr.getSetValue().accept(this);
-				
-				String targetVarName = expr.getIdentifer().binding.getSymbol();
-				String targetVarType = this.getTypeString(expr.getIdentifer().binding.getSymbolType());
-				
-				mv.visitFieldInsn(PUTFIELD, DEFAULT_PACKAGE + currentClass.className, targetVarName, targetVarType);
-				
-			}
-		}
-		
-		mv.visitInsn(RETURN);
-		mv.visitMaxs(ClassWriter.COMPUTE_FRAMES, ClassWriter.COMPUTE_MAXS);
-		mv.visitEnd();
-			
-		
-		
-
 		for(ASTNode child : node.getChildren()) {
 			if(child instanceof WoolMethod) {
-				WoolMethod m = (WoolMethod) child;
-				
-				this.visit((WoolMethod) m);
+				child.accept(this);
 			}
 		}
-		
-		
-		//visit all of the children
+
 		
 		cw.visitEnd();
 		return cw.toByteArray();
 	}
 	
-	/*@Override
-	public byte[] visit(WoolMethod node) {
-		String methodName = node.binding.getMethodDescriptor().methodName;
-		String typeString = this.getMethodTypeString(node.binding.getMethodDescriptor());
-		
-		mv = cw.visitMethod(ACC_PUBLIC, methodName, typeString, null, null);
-		mv.visitCode();
-		
-		
-		
-		
-		mv.visitEnd();
-		
-		return null;
-	}*/
 	
 	private String getMethodTypeString(MethodDescriptor md) {
 		String typeString = "(";
@@ -205,4 +244,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 		return "L" + DEFAULT_PACKAGE + type + ";";
 	}
+	
+	public boolean isMethodLocal(AbstractBinding binding) {
+		return currentMethod != null && currentMethod.argumentDefinedHereAtChildIndex(binding.getSymbol()) != -1;
+	}
+
 }

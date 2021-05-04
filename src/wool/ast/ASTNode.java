@@ -78,10 +78,31 @@ public abstract class ASTNode {
 		
 	}
 	public String printNicely() {
-		return nodeType.name();
+		return getTabsForDepth() + nodeType.name();
 	}
 
 	public void accept(IRCreator irc) {
 		irc.visit(this);
 	}
+	
+	public int getDepth() {
+		int depth = 0;
+		
+		ASTNode up = this.parent;
+		
+		while(up != null) {
+			up = up.parent;
+			depth++;
+		}
+		return depth;
+	}
+	public String getTabsForDepth() {
+		String tabs = "";
+		for(int x = 0; x < getDepth(); x++) {
+			tabs += "\t";
+		}
+		
+		return tabs;
+	}
+	
 }

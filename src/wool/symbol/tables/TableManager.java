@@ -194,7 +194,10 @@ public class TableManager {
 		b.setClassWhereDefined(currentClassName);
 	    currentTable.add(name, b);
 	    
-	    currentClassBinding.getClassDescriptor().addVariable(b);
+	    
+	    if(currentTable.getScopeLevel() == 1) {
+	    	currentClassBinding.getClassDescriptor().addVariable(b);
+	    }
 	    
 	    return b;
 	}
@@ -209,6 +212,8 @@ public class TableManager {
 		tables.add(currentTable);
 		
 	}
+	
+	public int getScope() { return currentTable.getScopeLevel(); }
 	
 	public void exitScopeInClass() {
 		currentTable = currentTable.getParentTable();

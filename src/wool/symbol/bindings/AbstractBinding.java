@@ -82,7 +82,7 @@ public abstract class AbstractBinding {
                 }
                 break;
             case TYPE:
-                sb.append('\n');
+            
                 sb.append("    descriptor:" + extraInfo());
                 break;
             case METHOD:
@@ -117,42 +117,5 @@ public abstract class AbstractBinding {
         return result;
     }
 
-    /*
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof AbstractBinding)) {
-            return false;
-        }
-        AbstractBinding other = (AbstractBinding) obj;
-        if (bindingType != other.bindingType) {
-            return false;
-        }
-        if (classWhereDefined == null) {
-            if (other.classWhereDefined != null) {
-                return false;
-            }
-        } else if (!classWhereDefined.equals(other.classWhereDefined)) {
-            return false;
-        }
-        if (!symbol.equals(other.symbol)) {
-            return false;
-        }
-        if (symbolType == null) {
-            if (other.symbolType != null) {
-                return false;
-            }
-        } else if (!symbolType.equals(other.symbolType)) {
-            return false;
-        }
-        return true;
-    }
+   
 }

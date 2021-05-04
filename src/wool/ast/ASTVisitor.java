@@ -42,7 +42,7 @@ public abstract class ASTVisitor<T> {
 	public T visitChildren(ASTNode node) {
 		
 		for(ASTNode n : node.getChildren()) {
-			return this.visit(n);
+			this.visit(n);
 		}
 		
 		return null;
