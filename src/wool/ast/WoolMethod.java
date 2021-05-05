@@ -16,7 +16,7 @@ public class WoolMethod extends ASTNode {
 	}
 	
 	@Override
-	public String printNicely() { 
+	public String toString() { 
 		
 		if(this.binding.getSymbolType() != null)
 			return getTabsForDepth() + ((MethodBinding) binding).getMethodDescriptor().methodName + "(children: " + this.children.size() + ") : " + this.binding.getSymbolType();
@@ -27,6 +27,12 @@ public class WoolMethod extends ASTNode {
 	public int argumentDefinedHereAtChildIndex(String name) {
 		int x = 0;
 		for(ASTNode child : this.children) {
+			
+				if(child instanceof WoolAssign) {
+					child = ((WoolAssign) child).getIdentifer();
+				}
+			
+			
 				if(child instanceof WoolVariable) {
 					WoolVariable arg = (WoolVariable) child;
 					String symbol = arg.binding.symbol;

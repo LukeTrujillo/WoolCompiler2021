@@ -36,7 +36,7 @@ public class ASTFactory {
 		return new WoolExprList();
 	}
 	
-	public static WoolAssignExpr makeAssignExpr() { return new WoolAssignExpr(); }
+	public static WoolAssign makeAssignExpr() { return new WoolAssign(); }
 	
 	public static WoolIf makeIf() { return new WoolIf(); }
 	public static WoolWhile makeWhile() { return new WoolWhile(); }
@@ -48,4 +48,10 @@ public class ASTFactory {
 	public static WoolTerminal makeConstant(Token t, TerminalType type) { return new WoolTerminal(t, type); }
 	public static WoolTerminal makeTypeTerminal(Token t) { return new WoolTerminal(t, WoolTerminal.TerminalType.tType); }
 	public static WoolNew makeWoolNew() { return new WoolNew(); }
+	
+	public static WoolMath makeWoolMath(Token op) { return new WoolMath(op); }
+	public static WoolParen makeWoolParen() { return new WoolParen(); }
+	
+	public static WoolCompare nakeWoolCompare(Token op) { return new WoolCompare(op); }
+
 }

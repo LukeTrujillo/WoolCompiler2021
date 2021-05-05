@@ -9,7 +9,7 @@ public abstract class AbstractBinding {
 	protected BindingType bindingType;
 	public String symbol;
 
-	protected String symbolType;
+	public String symbolType;
 
 	protected String classWhereDefined;
 	public Token token;

@@ -2,9 +2,9 @@ package wool.ast;
 
 import wool.typechecking.TypeChecker;
 
-public class WoolAssignExpr extends ASTNode {
+public class WoolAssign extends ASTNode {
 
-	public WoolAssignExpr() {
+	public WoolAssign() {
 		super(ASTNodeType.nAssign);
 	}
 	

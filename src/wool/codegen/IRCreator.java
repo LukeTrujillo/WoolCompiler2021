@@ -4,17 +4,23 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
-import wool.ast.ASTFactory;
 import wool.ast.ASTNode;
 import wool.ast.ASTVisitor;
-import wool.ast.WoolAssignExpr;
+import wool.ast.WoolAssign;
+import wool.ast.WoolCompare;
+import wool.ast.WoolIf;
+import wool.ast.WoolMath;
 import wool.ast.WoolMethod;
+import wool.ast.WoolMethodCall;
+import wool.ast.WoolMethodCall.DispatchType;
 import wool.ast.WoolProgram;
 import wool.ast.WoolTerminal;
 import wool.ast.WoolTerminal.TerminalType;
 import wool.ast.WoolType;
 import wool.ast.WoolVariable;
+import wool.ast.WoolWhile;
 import wool.symbol.bindings.AbstractBinding;
 import wool.symbol.bindings.MethodBinding;
 import wool.symbol.bindings.ObjectBinding;
@@ -39,12 +45,16 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	ClassDescriptor currentClass;
 	WoolMethod currentMethod;
 	
+	Stack<Label> jumps;
+
+	int maxStack;
+	int maxFrames;
 	
-	int nextLocalAddr;
+	//int nextLocalAddr;
 	
 	boolean inConstructor;
 
-	
+
 	private final static String DEFAULT_PACKAGE = "wool/";
 	
 	private TableManager tm;
@@ -53,8 +63,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		classes = new HashMap<String, byte[]>();
 		currentMethod = null;
 		inConstructor = false;
+
 		
-		this.tm = TableManager.getInstance();
 	}
 
 	@Override
@@ -73,7 +83,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 	@Override
 	public byte[] visit(WoolMethod node) {
-		nextLocalAddr = 0;
+		
+		maxStack = 1;
+		maxFrames = 2;
 		
 		MethodDescriptor descriptor = node.binding.getMethodDescriptor();
 		
@@ -87,7 +99,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + currentClass.inherits, "<init>", "()V", false);
 		}
 		
-		nextLocalAddr = 1 + descriptor.argumentTypes.size();
+		maxStack = 1 + descriptor.getArgumentTypes().size();
+		jumps = new Stack<Label>();
 		
 		currentMethod = node;
 		visitChildren(node); //TODO this may cause issue with variables under method dec but above expr list
@@ -115,9 +128,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 
 
 	@Override
-	public byte[] visit(WoolAssignExpr node) {
+	public byte[] visit(WoolAssign node) {
 		
-		WoolTerminal setThis = (WoolTerminal)node.getIdentifer();
+		ASTNode setThis = node.getIdentifer();
 		ASTNode withThis = node.getSetValue();
 
 		if(currentMethod != null) {
@@ -130,9 +143,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			withThis.accept(this); //whatever the value is should be on the TOS
 			
 			if(index != -1) { //it is a local variable
-				mv.visitIntInsn(ISTORE, index + 1);	
+				mv.visitVarInsn(ISTORE, index + 1);	
 				return null;
-			}
+			} 
 			
 		}
 		
@@ -151,6 +164,76 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		if(currentMethod == null) {
 			fv = cw.visitField(ACC_PROTECTED, binding.symbol, this.getTypeString(binding.getSymbolType()), null, null);
 			fv.visitEnd();
+		} else if(node.parent instanceof WoolMethod) {
+			int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.symbol);
+			mv.visitInsn(ICONST_0);
+			mv.visitVarInsn(ISTORE, index + 1);	
+		}
+		return null;
+	}
+	
+	@Override
+	public byte[] visit(WoolIf node) {
+		node.getChild(0).accept(this);
+		
+		Label l1 = new Label();
+		Label l2 = new Label();
+		Label l3 = new Label();
+		
+		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l2);
+		mv.visitJumpInsn(GOTO, l1);
+	
+		mv.visitLabel(l2);
+		mv.visitFrame(Opcodes.F_SAME, 2, new Object[] {DEFAULT_PACKAGE + this.currentClass.className, Opcodes.INTEGER}, 1, new Object[] {Opcodes.INTEGER});
+		node.getChild(1).accept(this);
+		mv.visitJumpInsn(GOTO, l3);
+	
+		mv.visitLabel(l1);
+		mv.visitFrame(Opcodes.F_SAME, 2, new Object[] {DEFAULT_PACKAGE + this.currentClass.className, Opcodes.INTEGER}, 1, new Object[] {Opcodes.INTEGER});
+		node.getChild(2).accept(this);
+		mv.visitJumpInsn(GOTO, l3);
+		
+		mv.visitLabel(l3); //end0
+		
+		maxStack++;
+		return null;
+		
+	}
+	
+	@Override
+	public byte[] visit(WoolWhile node) {
+		
+		Label l1 = new Label();
+		Label l2 = new Label();
+		Label l3 = new Label();
+		
+	
+
+		mv.visitLabel(l1);
+		mv.visitFrame(Opcodes.F_SAME, 3, new Object[] {DEFAULT_PACKAGE + this.currentClass.className, Opcodes.INTEGER, Opcodes.INTEGER}, 2, new Object[] {Opcodes.INTEGER, Opcodes.INTEGER});
+		node.getChild(0).accept(this);
+		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l2);
+		mv.visitJumpInsn(GOTO, l3);
+		
+		mv.visitLabel(l2);
+		mv.visitFrame(Opcodes.F_SAME, 3, new Object[] {DEFAULT_PACKAGE + this.currentClass.className, Opcodes.INTEGER, Opcodes.INTEGER}, 2, new Object[] {Opcodes.INTEGER, Opcodes.INTEGER});
+		node.getChild(1).accept(this);
+		mv.visitJumpInsn(GOTO, l1);
+		
+		
+		mv.visitLabel(l3);
+		return null;
+	}
+	
+	@Override
+	public byte[] visit(WoolCompare node) {
+		if(node.getChildren().size() == 1) { //flip it
+			
+		} else { //compare
+			
+			node.getChild(0).accept(this);
+			node.getChild(1).accept(this);
+
 		}
 		
 		return null;
@@ -165,7 +248,13 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			 */
 			switch(node.terminalType) {
 			case tInt:
-				mv.visitIntInsn(BIPUSH, Integer.parseInt(node.token.getText()));
+				int number = Integer.parseInt(node.token.getText());
+				
+				if(node.parent instanceof WoolMath && node.parent.getChildren().size() == 1) { //it is just a negative node
+					number = number * -1;
+				}
+				
+				mv.visitIntInsn(BIPUSH, number);
 				break;
 			
 			case tBool:
@@ -193,6 +282,18 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		return null;
 	}
 	
+	@Override
+	public byte[] visit(WoolMethodCall node) {
+		
+		if(node.dispatch == DispatchType.mcLocal) {
+			mv.visitIntInsn(ALOAD, 0);
+			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + currentClass.className, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
+			
+		}
+		
+		
+		return null;
+	}
 	
 	@Override
 	public byte[] visit(WoolType node) {
@@ -218,6 +319,32 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		return cw.toByteArray();
 	}
 	
+	@Override
+	public byte[] visit(WoolMath node) {
+		
+		if(node.getChildren().size() == 1) {
+			node.getChild(0).accept(this);
+			return null;
+		}
+		
+		node.getChild(0).accept(this);
+		node.getChild(1).accept(this);
+		
+		System.out.println(node.token.getText());
+		
+		if(node.token.getText().equals("+")) 
+			mv.visitInsn(IADD);
+		else if(node.token.getText().equals("-")) 
+			mv.visitInsn(ISUB);
+		else if(node.token.getText().equals("*")) 
+			mv.visitInsn(IMUL);
+		else if(node.token.getText().equals("/"))
+			mv.visitInsn(IDIV);
+		
+		return null;
+		
+	}
+	
 	
 	private String getMethodTypeString(MethodDescriptor md) {
 		String typeString = "(";
@@ -239,8 +366,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	}
 	
 	private String getTypeString(String type) {
-		if(type.equals("Int")) return "I";
-		if(type.equals("Bool")) return "Z";
+		if(type.equals("Int") || type.equals("int")) return "I";
+		if(type.equals("Bool") || type.equals("boolean")) return "Z";
 	
 		return "L" + DEFAULT_PACKAGE + type + ";";
 	}
@@ -249,4 +376,6 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		return currentMethod != null && currentMethod.argumentDefinedHereAtChildIndex(binding.getSymbol()) != -1;
 	}
 
+	
+	
 }

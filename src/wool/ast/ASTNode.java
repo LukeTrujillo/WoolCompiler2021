@@ -56,7 +56,7 @@ public abstract class ASTNode {
 
 	public String accept(ASTPrinter printer) {
 
-		System.out.println(this.printNicely());
+		System.out.println(this);
 		
 		for(ASTNode node : children) {
 			node.accept(printer);
@@ -77,7 +77,7 @@ public abstract class ASTNode {
 		return binding;
 		
 	}
-	public String printNicely() {
+	public String toString() {
 		return getTabsForDepth() + nodeType.name();
 	}
 

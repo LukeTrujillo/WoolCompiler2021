@@ -30,14 +30,13 @@ expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #Ful
 	| '{' (exprs+=expr EL)+ '}' #ExprList
 	| 'select' selectAlt+  'end' #SelectExpr
 	| 'new' type=TYPE #NewExpr
-	| <assoc=right> '-' expr #UMinusExpr
+	| <assoc=right> op='-' right=expr #UMinusExpr
 	| 'isnull' expr #IsNullExpr
-	| left=expr ('*' | '/') right=expr #MultExpr
-	| left=expr ('+' | '-') right=expr #AddExpr
-	| left=expr ('<' | '<=' | '>' | '>=') right=expr #RelExpr
-	| <assoc=right> left=expr ('=' | '~=') right=expr # EqExpr
-    | <assoc=right> '~' expr # NotExpr
-	| '(' expr ')' #ParenExpr
+	| left=expr op=('*' | '/' | '+' | '-') right=expr #MathExpr
+	| left=expr op=('<' | '<=' | '>' | '>=') right=expr #RelExpr
+	| <assoc=right> left=expr op=('=' | '~=') right=expr # EqExpr
+    | <assoc=right> op='~' left=expr # NotExpr
+	| '(' go=expr ')' #ParenExpr
 	| variableName=ID '<-' expr #AssignExpr
 	| name=ID #IDExpr
 	| niceNumber=NUM #NumExpr

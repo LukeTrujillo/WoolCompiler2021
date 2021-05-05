@@ -26,15 +26,29 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	}
 
 	@Override
-	public AbstractBinding visit(WoolAssignExpr node) {
+	public AbstractBinding visit(WoolAssign node) {
 		
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
 		
-		boolean allowed = isTypeAToTypeBAllowed( node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
+		/*boolean allowed = isTypeAToTypeBAllowed(node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
 		
 		if(!allowed) throw new WoolException("Type " + node.getSetValue().binding.getSymbolType() + " cannot be set of a variable of Type " + node.getIdentifer().binding.getSymbolType());
+		*/
+		
+		return null;
+	}
+	
+	@Override
+	public AbstractBinding visit(WoolMath node) {
+		for(ASTNode n : node.getChildren()) {
+			n.accept(this);
+		}
+		
+		if(node.getChildren().size() == 1 && !node.token.getText().equals("-")) {
+			throw new WoolException("WoolMath with one child has '" + node.token.getText() + "' operator; needs to be '-'");
+		}
 		
 		
 		return null;
@@ -47,12 +61,29 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		List<String> args = node.binding.getMethodDescriptor().getArgumentTypes();
 		
 		 for(String arg : args) {
+			 if(arg != null && arg.equals("int")) {
+			 		node.binding.getMethodDescriptor().returnType = "Int";
+			 		arg = node.binding.getMethodDescriptor().returnType;
+				} else if(arg != null && arg.equals("boolean")) {
+					node.binding.getMethodDescriptor().returnType = "Bool";
+					arg = node.binding.getMethodDescriptor().returnType;
+				}
+			 
+			 
 				AbstractBinding search = tm.getClassTable().lookup(arg);
 				if(search == null) throw new WoolException("Type \"" + arg + "\" not registered in method " + node.binding.getSymbol());
 		 }
 		 
 		 //verify the return type
 		 String returnType = node.binding.getMethodDescriptor().returnType;
+		 
+		 	if(returnType != null && returnType.equals("int")) {
+		 		node.binding.getMethodDescriptor().returnType = "Int";
+		 		returnType = node.binding.getMethodDescriptor().returnType;
+			} else if(returnType != null && returnType.equals("boolean")) {
+				node.binding.getMethodDescriptor().returnType = "Bool";
+				returnType = node.binding.getMethodDescriptor().returnType;
+			}
 		 
 		 AbstractBinding search = tm.getClassTable().lookup(returnType);
 		 
@@ -72,18 +103,24 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	
 	public AbstractBinding visit(WoolMethodCall node) {
 	
-		AbstractBinding binding = node.object.accept(this);
+		ClassBinding binding = null;
 		
-		ClassBinding methodTarget = tm.getClassBindingFromString(binding.getSymbolType());
+		if(node.dispatch == DispatchType.mcLocal) { //load the self object
+			binding = currentClassBinding;
+			if(binding == null) throw new WoolException("self type not defined in class " + currentClassBinding.getClassDescriptor().className);
+			
+		} else if(node.dispatch == DispatchType.mcObject) {
+			ObjectBinding ob = (ObjectBinding) node.getObject().accept(this);
+			binding = tm.getClassBindingFromString(ob.getSymbolType());
+			
+			if(binding == null) throw new WoolException("unable to locate the class binding when doing a full method call");
+		}
 		
-		System.out.println(node.methodName.token.getText());
+		MethodBinding mb = binding.getClassDescriptor().getMethodBinding(node.getMethodName().token.getText());
+		if(mb == null) throw new WoolException(node.getMethodName().binding.getSymbol() + " not registered in class " + binding.getSymbol());
 		
-		MethodBinding mb = methodTarget.getClassDescriptor().getMethodBinding(node.methodName.token.getText());
+		node.getMethodName().binding = mb;
 		
-		if(mb == null) throw new WoolException("Object call does not contain method");
-		
-		node.methodName.binding = mb;
-
 		return null;
 	}
 	
@@ -109,16 +146,21 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	public AbstractBinding visit(WoolTerminal node) {
 		
 		if(node.binding == null) {
-
-			
-			
 			if(node.terminalType == TerminalType.tID) { //now start checking at class definitons
 				
 				if(currentMethod != null) {
 					int index = currentMethod.argumentDefinedHereAtChildIndex(node.token.getText());
 					
-					if(index != -1)
-						node.binding = currentMethod.getChild(index).binding;
+					if(index != -1) {
+						if(currentMethod.getChild(index) instanceof WoolAssign) {
+							node.binding = ((WoolAssign) currentMethod.getChild(index)).getIdentifer().binding;
+						
+						} else {
+							node.binding = currentMethod.getChild(index).binding;
+						}
+					
+					}
+					
 				}
 					
 				if(node.binding == null)
@@ -134,7 +176,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 				node.binding = tm.getClassTable().lookup("Bool");
 			} else if(node.terminalType == TerminalType.tStr) {
 				node.binding = tm.getClassTable().lookup("Str");
-			}
+			} 
 		
 			
 		}
@@ -150,7 +192,16 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		
 		ObjectBinding binding = node.binding;
 	
-		AbstractBinding search = tm.getClassTable().lookup(node.binding.getSymbolType());
+		AbstractBinding search = null;
+		
+		String symbolType = node.binding.getSymbolType();
+		if(symbolType.equals("int")) {
+			node.binding.symbolType = "Int";
+		} else if(symbolType.contentEquals("boolean")) {
+			node.binding.symbolType = "Bool";
+		}
+		
+		search = tm.getClassTable().lookup(node.binding.getSymbolType());
 		if(search == null) throw new WoolException("Type \"" + node.binding.getSymbolType() + "\" not registered");
 			
 		
@@ -189,15 +240,5 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	}
 	
 	
-	private boolean isTypeAToTypeBAllowed(String aType, String bType) {
-		ClassBinding aB = (ClassBinding) tm.getClassTable().lookup(aType);
-		ClassBinding bB = (ClassBinding) tm.getClassTable().lookup(bType);
-		
-		if(aB == bB) return true;
-		
-		if(aB == null || bB == null) return false;
-		
-		return isTypeAToTypeBAllowed(aB.getClassDescriptor().inherits, bType);
-	}
 
 }

@@ -3,6 +3,7 @@ package wool.ast;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
+
 import wool.ast.WoolMethodCall.DispatchType;
 import wool.ast.WoolTerminal.TerminalType;
 import wool.lexparse.WoolBaseVisitor;
@@ -10,6 +11,7 @@ import wool.lexparse.WoolParser;
 import wool.lexparse.WoolParser.AssignExprContext;
 import wool.lexparse.WoolParser.ClassBodyContext;
 import wool.lexparse.WoolParser.ClassDefContext;
+import wool.lexparse.WoolParser.EqExprContext;
 import wool.lexparse.WoolParser.ExprContext;
 import wool.lexparse.WoolParser.ExprListContext;
 import wool.lexparse.WoolParser.FalseExprContext;
@@ -18,14 +20,18 @@ import wool.lexparse.WoolParser.FullMethodCallContext;
 import wool.lexparse.WoolParser.IDExprContext;
 import wool.lexparse.WoolParser.IfExprContext;
 import wool.lexparse.WoolParser.LocalMethodCallContext;
-
+import wool.lexparse.WoolParser.MathExprContext;
 import wool.lexparse.WoolParser.MethodContext;
 import wool.lexparse.WoolParser.NewExprContext;
+import wool.lexparse.WoolParser.NotExprContext;
 import wool.lexparse.WoolParser.NullExprContext;
 import wool.lexparse.WoolParser.NumExprContext;
+import wool.lexparse.WoolParser.ParenExprContext;
 import wool.lexparse.WoolParser.ProgramContext;
+import wool.lexparse.WoolParser.RelExprContext;
 import wool.lexparse.WoolParser.StrExprContext;
 import wool.lexparse.WoolParser.TrueExprContext;
+import wool.lexparse.WoolParser.UMinusExprContext;
 import wool.lexparse.WoolParser.VariableDefContext;
 import wool.lexparse.WoolParser.WhileExprContext;
 import wool.symbol.bindings.AbstractBinding;
@@ -85,7 +91,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		
 		for(VariableDefContext variable : body.variables) {
-			ASTNode varAST = this.visitVariableDef(variable);
+			ASTNode varAST = variable.accept(this);
 			
 			if(varAST instanceof WoolVariable) {
 				type.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
@@ -94,14 +100,14 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 			//By here it has to be an assign but lets double check
 			
-			if(varAST instanceof WoolAssignExpr) {
-				type.addChildAndSetAsParent(((WoolAssignExpr) varAST).getIdentifer()); //add the variable node to the top
+			if(varAST instanceof WoolAssign) {
+				type.addChildAndSetAsParent(((WoolAssign) varAST).getIdentifer()); //add the variable node to the top
 				
-				WoolTerminal variableName = ASTFactory.makeID(((WoolAssignExpr) varAST).getIdentifer().binding);
-				WoolAssignExpr newAssign = ASTFactory.makeAssignExpr();
+				WoolTerminal variableName = ASTFactory.makeID(((WoolAssign) varAST).getIdentifer().binding);
+				WoolAssign newAssign = ASTFactory.makeAssignExpr();
 				
 				newAssign.addChildAndSetAsParent(variableName);
-				newAssign.addChildAndSetAsParent(((WoolAssignExpr) varAST).getSetValue());
+				newAssign.addChildAndSetAsParent(((WoolAssign) varAST).getSetValue());
 				
 				exprList.addChildAndSetAsParent(newAssign);
 			}
@@ -112,7 +118,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		
 		for(MethodContext m : body.methods) {
-			ASTNode methodAST = this.visitMethod(m);
+			ASTNode methodAST = m.accept(this);
 			type.addChildAndSetAsParent(methodAST);
 			
 			if(classBinding.getClassDescriptor().getMethodBinding(m.methodName.getText()) == null) {
@@ -134,7 +140,6 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		tm.enterScopeInClass();
 		
-		//define the method parameters too
 		
 		for(FormalContext f : ctx.formals) {
 			ASTNode arg = f.accept(this);
@@ -143,7 +148,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		}
 	
 		for(VariableDefContext variable : ctx.vars) {
-			WoolVariable varAST = (WoolVariable) this.visitVariableDef(variable);
+			ASTNode varAST = variable.accept(this);
 			method.addChildAndSetAsParent(varAST); //add varAST as a child of type, make type the child of varAST 
 		}
 		
@@ -160,25 +165,113 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	public ASTNode visitExprContext(ExprContext ctx) {
 		
 		if(ctx instanceof ExprListContext) return ((ExprListContext) ctx).accept(this);
-		
 		if(ctx instanceof FalseExprContext) return ASTFactory.makeConstant(((FalseExprContext)ctx).f, TerminalType.tBool);
 		if(ctx instanceof TrueExprContext) return ASTFactory.makeConstant(((TrueExprContext)ctx).t, TerminalType.tBool);
 		if(ctx instanceof StrExprContext) return ASTFactory.makeConstant(((StrExprContext)ctx).s, TerminalType.tStr);
 		if(ctx instanceof NumExprContext) return ASTFactory.makeConstant(((NumExprContext)ctx).niceNumber, TerminalType.tInt);
-		
 		if(ctx instanceof IDExprContext) return ASTFactory.makeID(((IDExprContext) ctx).name);
-		
 		if(ctx instanceof AssignExprContext) return ((AssignExprContext) ctx).accept(this);
+		if(ctx instanceof LocalMethodCallContext) return ((LocalMethodCallContext) ctx).accept(this);
+		if(ctx instanceof FullMethodCallContext) return ((FullMethodCallContext) ctx).accept(this);
+		
+		if(ctx instanceof MathExprContext) return ((MathExprContext) ctx).accept(this);
+		if(ctx instanceof ParenExprContext) return ((ParenExprContext) ctx).accept(this);
+		if(ctx instanceof UMinusExprContext) return ((UMinusExprContext) ctx).accept(this);
+		
+		if(ctx instanceof IfExprContext) return ((IfExprContext) ctx).accept(this);
+		if(ctx instanceof WhileExprContext) return ((WhileExprContext) ctx).accept(this);
+		
+		if(ctx instanceof RelExprContext) return ((RelExprContext) ctx).accept(this);
+		if(ctx instanceof EqExprContext) return ((EqExprContext) ctx).accept(this);
+		if(ctx instanceof NotExprContext) return ((NotExprContext) ctx).accept(this);
 		
 		return null;
 	}
+	
+	@Override
+	public ASTNode visitNotExpr(NotExprContext ctx) {
+		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		
+		ASTNode left = this.visitExprContext(ctx.left);
+		comp.addChildAndSetAsParent(left);
+		
+		return comp;
+	}
+	
+	@Override
+	public ASTNode visitRelExpr(RelExprContext ctx) {
+		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		
+		ASTNode left = this.visitExprContext(ctx.left);
+		comp.addChildAndSetAsParent(left);
+		
+		ASTNode right = this.visitExprContext(ctx.right);
+		comp.addChildAndSetAsParent(right);
+		
+		return comp;
+	}
+	
+	@Override
+	public ASTNode visitEqExpr(EqExprContext ctx) {
+		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		
+		ASTNode left = this.visitExprContext(ctx.left);
+		comp.addChildAndSetAsParent(left);
+		
+		ASTNode right = this.visitExprContext(ctx.right);
+		comp.addChildAndSetAsParent(right);
+		
+		return comp;
+	}
+	
+	
+	@Override
+	public ASTNode visitUMinusExpr(UMinusExprContext ctx) {
+		WoolMath math = ASTFactory.makeWoolMath(ctx.op);
+		
+		ASTNode inner = this.visitExprContext(ctx.right);
+		math.addChildAndSetAsParent(inner);
+		
+		return math;
+	}
+	
+	@Override
+	public ASTNode visitParenExpr(ParenExprContext ctx) {
+		WoolParen paren = ASTFactory.makeWoolParen();
+		ASTNode inner = this.visitExprContext(ctx.go);
+		paren.addChildAndSetAsParent(inner);
+		
+		return paren;
+	}
+	
+	@Override
+	public ASTNode visitMathExpr(MathExprContext ctx) {
+		WoolMath math = ASTFactory.makeWoolMath(ctx.op);
+		
+		ExprContext firstDive = ctx.left;
+		ExprContext secondDive = ctx.right;
+		
+		if(secondDive instanceof ParenExprContext) {
+			firstDive = ctx.right;
+			secondDive = ctx.left;
+		} 
+		
+		ASTNode leftNode = this.visitExprContext(firstDive);
+		ASTNode rightNode = this.visitExprContext(secondDive);
+		
+		math.addChildAndSetAsParent(leftNode);
+		math.addChildAndSetAsParent(rightNode);
+		
+		return math;
+	}
+	
 	
 	@Override
 	public ASTNode visitExprList(ExprListContext ctx) {
 		WoolExprList node = ASTFactory.makeExprList();
 		
 		for(ExprContext expr : ctx.exprs) {
-			ASTNode child = expr.accept(this);
+			ASTNode child =  this.visitExprContext(expr);
 			node.addChildAndSetAsParent(child);
 		}
 		return node;
@@ -199,37 +292,16 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		WoolVariable variable = ASTFactory.makeWoolVariable(binding);
 		
 		if(ctx.initializer != null) {
-			WoolAssignExpr expr = ASTFactory.makeAssignExpr();
+			WoolAssign expr = ASTFactory.makeAssignExpr();
 			
 			expr.addChildAndSetAsParent(variable);
 			
 			
-			ASTNode node = ctx.expr().accept(this);
-			
-			if(node == null) { //then it is likely a terminal
-			
-				if (ctx.initializer instanceof NumExprContext) {
-					
-					node = ASTFactory.makeConstant(((NumExprContext) ctx.initializer).niceNumber, TerminalType.tInt);
-					expr.addChildAndSetAsParent(node);
-				}
-				
-				if(ctx.initializer instanceof TrueExprContext) {
 
-					node = ASTFactory.makeConstant(((TrueExprContext) ctx.initializer).t, TerminalType.tBool);
-					expr.addChildAndSetAsParent(node);
-				}
-				if(ctx.initializer instanceof FalseExprContext) {
-					node = ASTFactory.makeConstant(((FalseExprContext) ctx.initializer).f, TerminalType.tBool);
-					expr.addChildAndSetAsParent(node);
-				}
-				
-				if(ctx.initializer instanceof StrExprContext) {
-					node = ASTFactory.makeConstant(((StrExprContext) ctx.initializer).s, TerminalType.tStr);
-					expr.addChildAndSetAsParent(node);
-				}
-				//TODO: might need to add null here
-			}
+			
+			ASTNode node = this.visitExprContext(ctx.expr());
+			expr.addChildAndSetAsParent(node);
+			
 			
 			return expr;
 		}
@@ -259,7 +331,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitAssignExpr(AssignExprContext ctx) {
-		WoolAssignExpr expr = ASTFactory.makeAssignExpr();
+		WoolAssign expr = ASTFactory.makeAssignExpr();
 		
 		WoolTerminal variableName = ASTFactory.makeID(ctx.variableName);
 		
@@ -278,15 +350,14 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		WoolMethodCall method = ASTFactory.makeMethodCall(DispatchType.mcObject);
 				
-		ASTNode caller = ASTFactory.makeConstant(ctx.object.start, TerminalType.tID);
-		method.object = caller;
-		method.addChildAndSetAsParent(caller);
+		ASTNode caller = ctx.object.accept(this);
+		method.setObject(caller);
 	
 		ASTNode methodName = ASTFactory.makeConstant(ctx.methodName, TerminalType.tMethod);
-		method.methodName = methodName;
+		method.setMethodName(methodName);
 		
-		for(ExprContext param: ctx.expr()) {
-			ASTNode pNode = param.accept(this);
+		for(ExprContext param: ctx.args) {
+			ASTNode pNode = this.visitExprContext(param);
 			methodName.addChildAndSetAsParent(pNode);
 		}
 		
@@ -297,7 +368,17 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitLocalMethodCall(LocalMethodCallContext ctx) {
-		return ASTFactory.makeMethodCall(DispatchType.mcLocal);
+		WoolMethodCall method = ASTFactory.makeMethodCall(DispatchType.mcLocal);
+		
+		WoolTerminal methodName = ASTFactory.makeConstant(ctx.methodName, TerminalType.tMethod);
+		method.setMethodName(methodName);
+		
+		for(ExprContext expr : ctx.args) {
+			ASTNode node = this.visitExprContext(expr);
+			methodName.addChildAndSetAsParent(methodName);
+		}
+		
+		return method;
 	}
 	
 	@Override

@@ -29,10 +29,10 @@ public class WoolTerminal extends ASTNode{
 	}
 	
 	@Override
-	public String printNicely() { 
+	public String toString() { 
 		
 		if(terminalType == TerminalType.tID)
-			return getTabsForDepth() + "binding_symbol=" + binding.getSymbol()+ " (Node"
+			return getTabsForDepth() + "binding_symbol=" + binding.getSymbol() + " (Node"
 					+ " Type: " + nodeType.name() + "  Termninal Type: " + terminalType.name() + ")"; 
 		else 
 			return getTabsForDepth() + "token=" + token.getText() + " (Node Type: " + nodeType.name() + "  Termninal Type: " + terminalType.name() + ")"; 

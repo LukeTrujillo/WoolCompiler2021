@@ -1,5 +1,5 @@
 package wool.ast;
 
 public enum ASTNodeType {
-	nAssign, nBinary, nUnary, nUBinary, nVariable, nWhile, nProgram, nType, nMethod, nTerminal, nMethodCall, nIf, nExprList, nNew;
+	nAssign, nCompare, nNeg, nMath, nVariable, nParen, nWhile, nProgram, nType, nMethod, nTerminal, nMethodCall, nIf, nExprList, nNew;
 }
