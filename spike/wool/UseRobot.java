@@ -39,7 +39,6 @@ public class UseRobot extends Wheel{
 		 * Polymorphism
 		 */
 		assert this.parentInheritedMethod() == false : "method not inherited by the child class";
-		
 		/*
 		 * Mathmatics
 		 */

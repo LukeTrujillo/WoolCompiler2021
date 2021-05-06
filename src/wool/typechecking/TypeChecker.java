@@ -31,14 +31,10 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		for(ASTNode n : node.getChildren()) {
 			n.accept(this);
 		}
-		
-		/*boolean allowed = isTypeAToTypeBAllowed(node.getSetValue().binding.getSymbolType(), node.getIdentifer().binding.getSymbolType());
-		
-		if(!allowed) throw new WoolException("Type " + node.getSetValue().binding.getSymbolType() + " cannot be set of a variable of Type " + node.getIdentifer().binding.getSymbolType());
-		*/
-		
+	
 		return null;
 	}
+
 	
 	@Override
 	public AbstractBinding visit(WoolMath node) {
@@ -89,20 +85,22 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		 
 		 AbstractBinding search = tm.getClassTable().lookup(returnType);
 		 
+		 for(ASTNode n : node.getChildren()) {
+				n.accept(this);
+			}
+		 
 		 if(node.binding.getMethodDescriptor().getMethodName().equalsIgnoreCase("<init>")) {
 			 return null;
 		 }
 		 
 		if(search == null) throw new WoolException("Return type \"" + returnType + "\" not registered in method " + node.binding.getSymbol());
 		
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
-		}
+
 		currentMethod = null;
 	
 		return null;
 	}
-	
+	@Override
 	public AbstractBinding visit(WoolMethodCall node) {
 	
 		ClassBinding binding = null;
@@ -137,13 +135,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		return null;
 	}
 	
-	public AbstractBinding visit(WoolNew node) {
-		for(ASTNode n : node.getChildren()) {
-			n.accept(this);
-		}
-		
-		return null;
-	}
+
 	
 	public AbstractBinding visit(WoolProgram node) {
 

@@ -32,6 +32,8 @@ public abstract class ASTVisitor<T> {
 		if(node instanceof WoolIf) return this.visit((WoolIf) node);
 		
 		if(node instanceof WoolCompare) return this.visit((WoolCompare) node);
+		
+		if(node instanceof WoolNew)return this.visit((WoolNew) node);
 
 		throw new WoolException("Unregistered ASTNode in WoolVisitor");
 	}

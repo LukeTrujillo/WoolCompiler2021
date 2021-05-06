@@ -1,11 +1,13 @@
 class Axel {
-	parentInheritedMethod(): Bool {
+	parentInheritedMethod() : Bool {
 		false
 	}
-
 }
 
 class Wheel inherits Axel {
+	axel:Axel <- new Axel;
+	n:Int <- 3;
+
 	five: Int <- 5;
 	truth: Bool <- false;
 	zero: Int;	
@@ -105,12 +107,15 @@ class Wheel inherits Axel {
     callSubstract() : Int {
     	sub(4, 5)
     }
-    
     sub(x: Int, y: Int) : Int {
     	{
     		x - y;
     	}
     }
     
+    tesFullCall() : Bool {
+    	axel.parentInheritedMethod()
+    }
+   
 	
 }

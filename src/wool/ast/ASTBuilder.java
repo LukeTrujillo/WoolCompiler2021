@@ -185,6 +185,8 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		if(ctx instanceof EqExprContext) return ((EqExprContext) ctx).accept(this);
 		if(ctx instanceof NotExprContext) return ((NotExprContext) ctx).accept(this);
 		
+		if(ctx instanceof NewExprContext) return ((NewExprContext) ctx).accept(this);
+		
 		return null;
 	}
 	
@@ -385,11 +387,11 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitNewExpr(NewExprContext ctx) {
-		WoolNew woolNew = ASTFactory.makeWoolNew();
+		//WoolNew woolNew = ASTFactory.makeWoolNew();
 		WoolTerminal type = ASTFactory.makeTypeTerminal(ctx.type);
-		woolNew.addChildAndSetAsParent(type);
+		//woolNew.addChildAndSetAsParent(type);
 		
-		return woolNew;
+		return type;
 	}
 	
 	@Override

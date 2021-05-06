@@ -21,6 +21,7 @@ import wool.ast.WoolMath;
 import wool.ast.WoolMethod;
 import wool.ast.WoolMethodCall;
 import wool.ast.WoolMethodCall.DispatchType;
+import wool.ast.WoolNew;
 import wool.ast.WoolProgram;
 import wool.ast.WoolTerminal;
 import wool.ast.WoolTerminal.TerminalType;
@@ -186,6 +187,11 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			} 
 			
 		}
+		if(withThis instanceof WoolTerminal && ((WoolTerminal) withThis).terminalType == TerminalType.tType) {
+			mv.visitTypeInsn(NEW, DEFAULT_PACKAGE + withThis.binding.getSymbolType());
+			mv.visitInsn(DUP);
+			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + withThis.binding.getSymbolType(), "<init>", "()V", false);
+		}
 		
 		mv.visitFieldInsn(PUTFIELD, DEFAULT_PACKAGE + currentClass.className, setThis.binding.symbol, this.getTypeString(setThis.binding.getSymbolType()));
 		
@@ -336,6 +342,11 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			frameStack.push(DEFAULT_PACKAGE + currentClass.inherits);
 			
 			
+		} else if(node.dispatch == DispatchType.mcObject) {
+			mv.visitVarInsn(ALOAD, 0);
+			
+			node.getObject().accept(this);
+			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
 		}
 		
 		
