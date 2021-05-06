@@ -60,6 +60,7 @@ public class ClassDescriptor {
      */
     public MethodBinding getMethodBinding(String methodName)
     {
+
         return methods.get(methodName);
     }
     

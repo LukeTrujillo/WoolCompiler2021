@@ -60,15 +60,17 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		//verify the arguments
 		List<String> args = node.binding.getMethodDescriptor().getArgumentTypes();
 		
+		int x = 0 ;
 		 for(String arg : args) {
 			 if(arg != null && arg.equals("int")) {
-			 		node.binding.getMethodDescriptor().returnType = "Int";
-			 		arg = node.binding.getMethodDescriptor().returnType;
+			 		node.binding.getMethodDescriptor().argumentTypes.set(x, "Int");
+			 		arg = node.binding.getMethodDescriptor().argumentTypes.get(x);
 				} else if(arg != null && arg.equals("boolean")) {
-					node.binding.getMethodDescriptor().returnType = "Bool";
-					arg = node.binding.getMethodDescriptor().returnType;
+					node.binding.getMethodDescriptor().argumentTypes.set(x, "Bool");
+					arg = node.binding.getMethodDescriptor().argumentTypes.get(x);
 				}
 			 
+			 x++;
 			 
 				AbstractBinding search = tm.getClassTable().lookup(arg);
 				if(search == null) throw new WoolException("Type \"" + arg + "\" not registered in method " + node.binding.getSymbol());
@@ -115,8 +117,19 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			
 			if(binding == null) throw new WoolException("unable to locate the class binding when doing a full method call");
 		}
+	
 		
-		MethodBinding mb = binding.getClassDescriptor().getMethodBinding(node.getMethodName().token.getText());
+		MethodBinding mb = null;
+		
+		while(mb == null) {
+			 mb = binding.getClassDescriptor().getMethodBinding(node.getMethodName().token.getText());
+			 
+			 if(binding.getClassDescriptor().inherits == null) break;
+			 
+			 binding = tm.getClassBindingFromString(binding.getClassDescriptor().inherits);
+		}
+		
+		
 		if(mb == null) throw new WoolException(node.getMethodName().binding.getSymbol() + " not registered in class " + binding.getSymbol());
 		
 		node.getMethodName().binding = mb;

@@ -309,13 +309,15 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		return variable;
 	}
 	
+	
+	
 	@Override
 	public ASTNode visitIfExpr(IfExprContext ctx) {
 		WoolIf expr = ASTFactory.makeIf();
 		expr.token = ctx.start;
-		expr.addChildAndSetAsParent(ctx.condition.accept(this));
-		expr.addChildAndSetAsParent(ctx.thenExpr.accept(this));
-		expr.addChildAndSetAsParent(ctx.elseExpr.accept(this));
+		expr.addChildAndSetAsParent(this.visitExprContext(ctx.condition));
+		expr.addChildAndSetAsParent(this.visitExprContext(ctx.thenExpr));
+		expr.addChildAndSetAsParent(this.visitExprContext(ctx.elseExpr));
 		return expr;
 	}
 	
@@ -323,8 +325,8 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	public ASTNode visitWhileExpr(WhileExprContext ctx) {
 		WoolWhile expr = ASTFactory.makeWhile();
 		expr.token = ctx.start;
-		expr.addChildAndSetAsParent(ctx.condition.accept(this));
-		expr.addChildAndSetAsParent(ctx.loopExpr.accept(this));
+		expr.addChildAndSetAsParent(this.visitExprContext(ctx.condition));
+		expr.addChildAndSetAsParent(this.visitExprContext(ctx.loopExpr));
 		
 		return expr;
 	}

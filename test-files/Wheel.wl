@@ -84,12 +84,23 @@ class Wheel inherits Axel {
         while n > 0
         loop
         {
-          i <- i + n;
+          i <- i + 1;
           n <- n - 1;
         }
         pool;
         i;
       }
+    }
+    assert(expect : int, actual : int) : Bool {
+      if expect = actual
+      then
+          true
+      else
+      	{
+      		abort();
+      		false;
+      	}
+      fi
     }
 
 	

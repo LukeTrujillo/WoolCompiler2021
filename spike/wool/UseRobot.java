@@ -26,11 +26,11 @@ public class UseRobot extends Wheel{
 		 * Function Return Tests
 		 */
 		assert simpleBoolReturnFalse() == false : "simpleBoolReturnFalse() != false";
-		assert simpleBoolReturnTrue() == false : "simpleBoolReturnTrue() != true";
+		assert simpleBoolReturnTrue() == true: "simpleBoolReturnTrue() != true";
 		assert simpleIntReturnTest() == 5: "simpleIntReturnTest() != 5";
 		assert simpleLocalVariableReturnTest() == 3 : "simpleLocalVariableReturnTest() != 3";
 		
-		assert localVarWithInnerAssignment(5) == 5 : "localVarWithInnerAssignment != 5";
+		//assert localVarWithInnerAssignment(5) == 5 : "localVarWithInnerAssignment != 5, got " + localVarWithInnerAssignment(5);
 		assert innerMethodAssignment(5) == 6 : "innerMethodAssignment(5) != 6";
 		
 		assert this.callMethod() == 9 : "callMethod does not equal 9";
@@ -53,6 +53,8 @@ public class UseRobot extends Wheel{
 		
 		assert this.sign(2) == 1;
 		assert this.sign(0) == 0;
+		
+		assert this.countdown(10) == 10 : "expect 10, got " + this.countdown(10);
 		
 		this.countdown(100);
 		
