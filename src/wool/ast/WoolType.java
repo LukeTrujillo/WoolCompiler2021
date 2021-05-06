@@ -17,5 +17,9 @@ public class WoolType extends ASTNode {
 	@Override
 	protected String extraInfo() { return ", inherits: " + binding.getClassDescriptor().inherits; }
 
+	@Override
+	public String toString() {
+		return super.toString();
+	}
 	
 }

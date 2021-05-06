@@ -35,6 +35,6 @@ public class WoolMethodCall extends ASTNode {
 	}
 	
 
-	@Override
-	public String toString() { return getTabsForDepth() + nodeType.name() + "(" + children.size() + ")"; }
+	/*@Override
+	public String toString() { return getTabsForDepth() + nodeType.name() + "(calling: " + getMethodName().binding.getSymbol() + " children: " + children.size() + ")"; }*/
 }

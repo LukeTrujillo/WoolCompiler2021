@@ -377,7 +377,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		
 		for(ExprContext expr : ctx.args) {
 			ASTNode node = this.visitExprContext(expr);
-			methodName.addChildAndSetAsParent(methodName);
+			methodName.addChildAndSetAsParent(node);
 		}
 		
 		return method;

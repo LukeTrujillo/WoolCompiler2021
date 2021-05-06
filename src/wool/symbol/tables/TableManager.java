@@ -53,7 +53,7 @@ public class TableManager {
 		 * Make the Object base class
 		 */
 		ClassDescriptor cd = new ClassDescriptor("Object", null);
-		MethodDescriptor md = new MethodDescriptor("abort", "Object");
+		MethodDescriptor md = new MethodDescriptor("abort", null);
 
 		cd.addMethod(MethodBinding.makeMethodBinding(md, null, "Object"));
 		md = new MethodDescriptor("typeName", "Str");

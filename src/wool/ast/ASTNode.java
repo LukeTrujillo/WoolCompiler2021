@@ -59,6 +59,7 @@ public abstract class ASTNode {
 		System.out.println(this);
 		
 		for(ASTNode node : children) {
+			
 			node.accept(printer);
 			
 		}

@@ -49,19 +49,25 @@ public class UseRobot extends Wheel{
 		assert this.paren == 3;
 		assert this.precedence == 10;
 		
-		assert this.sign(-5) == -1;
+		assert this.sign(-5) == -1 : "expected -1, got " + this.sign(-5);
 		
 		assert this.sign(2) == 1;
 		assert this.sign(0) == 0;
 		
 		assert this.countdown(10) == 10 : "expect 10, got " + this.countdown(10);
 		
+		assert this.ass(3, -3) == false;
+		assert this.ass(2, 2) == true;
+		
+		assert this.callSubstract() == -1;
+	
 		this.countdown(100);
 		
 		System.out.println("all assertions passed");
 	}
 
 	public static void main(String args[]) throws IOException {
+
 		
 		 Class cls = Wheel.class;
 	        InputStream inputStream 

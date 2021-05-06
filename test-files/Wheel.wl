@@ -91,17 +91,26 @@ class Wheel inherits Axel {
         i;
       }
     }
-    assert(expect : int, actual : int) : Bool {
+   ass(expect : int, actual : int) : Bool {
       if expect = actual
       then
           true
       else
       	{
-      		abort();
       		false;
       	}
       fi
     }
-
+    
+    callSubstract() : Int {
+    	sub(4, 5)
+    }
+    
+    sub(x: Int, y: Int) : Int {
+    	{
+    		x - y;
+    	}
+    }
+    
 	
 }

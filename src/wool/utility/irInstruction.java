@@ -1,4 +1,4 @@
-package wool.codegen;
+package wool.utility;
 
 public class irInstruction {
 

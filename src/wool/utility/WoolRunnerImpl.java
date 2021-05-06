@@ -15,7 +15,6 @@ public class WoolRunnerImpl implements WoolRunner {
 	private WoolParser parser;
 	private ASTNode ast;
 	private ParserRuleContext parseTree;
-	private LinkedList<irInstruction> ir;
 
 	private Supplier<Token> nextToken;
 
