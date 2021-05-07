@@ -13,7 +13,6 @@ public class WoolMethodCall extends ASTNode {
 	public DispatchType dispatch;
 	
 	public String methodName;
-
 	
 	public WoolMethodCall(DispatchType dispatch) {
 		super();

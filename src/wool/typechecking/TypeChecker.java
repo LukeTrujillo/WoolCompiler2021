@@ -129,7 +129,13 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			AbstractBinding ab = node.getObject().accept(this);
 			if(ab == null) throw new WoolException(node.getObject() + " has no binding ");
 			
-			ClassBinding parent = tm.getClassBindingFromString(ab.getSymbolType());
+			String starting = ab.getSymbolType();
+			
+			if(ab instanceof MethodBinding) {
+				starting = currentClassBinding.symbolType;
+			}
+			
+			ClassBinding parent = tm.getClassBindingFromString(starting);
 			
 			while(binding == null) {
 				binding = parent.getClassDescriptor().getMethodBinding(name);

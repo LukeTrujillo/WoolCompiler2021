@@ -1,4 +1,4 @@
-class Axel {
+class Axel inherits IO {
 	parentInheritedMethod() : Bool {
 		false
 	}
@@ -119,7 +119,6 @@ class Wheel inherits Axel {
             true
         else
         {
-            (*abort();*)
             false;
         }
         fi
@@ -131,6 +130,14 @@ class Wheel inherits Axel {
           assert(2, a.incr(4));
       }
     }
+    
+    checkSelf() : Wheel {
+    	copy().copy()
+    }
+    hello() : Object {
+    	outStr("hello ").outStr("world")
+    }
+    
   }
 	class A {
 	  incr(i : int) : int { i + 1}

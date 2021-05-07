@@ -63,6 +63,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 	private TableManager tm;
 	
+	String lastReturnType = "";
+	
 	public IRCreator() {
 		classes = new HashMap<String, byte[]>();
 		currentMethod = null;
@@ -97,7 +99,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		MethodDescriptor descriptor = node.binding.getMethodDescriptor();
 		
-		String signature = this.getMethodTypeString(descriptor);
+		String signature = this.getMethodTypeString(node.binding);
 		mv = cw.visitMethod(ACC_PUBLIC, descriptor.methodName, signature, null, null);
 		mv.visitCode();
 		
@@ -169,12 +171,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			} 
 			
 		}
-	/*	if(withThis instanceof WoolTerminal && ((WoolTerminal) withThis).terminalType == TerminalType.tType) {
-			mv.visitTypeInsn(NEW, DEFAULT_PACKAGE + withThis.binding.getSymbolType());
-			mv.visitInsn(DUP);
-			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + withThis.binding.getSymbolType(), "<init>", "()V", false);
-		}*/
-		
+	
 		mv.visitFieldInsn(PUTFIELD, DEFAULT_PACKAGE + currentClass.className, setThis.binding.symbol, this.getTypeString(setThis.binding.getSymbolType()));
 		
 		return null; 
@@ -304,6 +301,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			case tStr:
 				mv.visitLdcInsn(node.token.getText().substring(1, node.token.getText().length() - 1));
 				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + "Str", "makeStr", "(Ljava/lang/String;)Lwool/Str;", false);
+				lastReturnType = "Str";
 				break;
 			case tType:
 				mv.visitTypeInsn(NEW, DEFAULT_PACKAGE + node.binding.getSymbolType());
@@ -317,6 +315,10 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 	@Override
 	public byte[] visit(WoolMethodCall node) {
+	
+		String owner = "";
+		String name = "";
+		String signature = "";
 		
 		if(node.dispatch == DispatchType.mcLocal) {
 		
@@ -327,7 +329,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				child.accept(this);
 			}
 			
-			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + currentClass.className, node.binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.binding).getMethodDescriptor()), false);
+			owner = DEFAULT_PACKAGE + currentClass.className;
+			name = node.binding.getSymbol();
+			signature = this.getMethodTypeString(((MethodBinding)node.binding));
 			
 			
 		} else if(node.dispatch == DispatchType.mcObject) {
@@ -335,11 +339,18 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			for(ASTNode child : node.getChildren()) {
 				child.accept(this);
 			}
-		
-			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.binding).getMethodDescriptor()), false);
-		
-		
+			
+			owner = DEFAULT_PACKAGE + node.getObject().binding.symbolType;
+			name = node.binding.getSymbol();
+			signature = this.getMethodTypeString(((MethodBinding)node.binding));
 		}
+		
+		if(owner.contentEquals("wool/SELF_TYPE")) {
+			owner = DEFAULT_PACKAGE + currentClass.className;
+		}
+		
+		mv.visitMethodInsn(INVOKEVIRTUAL, owner, name, signature, false);
+		
 		
 		return null;
 	}
@@ -394,7 +405,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	}
 	
 	
-	private String getMethodTypeString(MethodDescriptor md) {
+	private String getMethodTypeString(MethodBinding mb) {
+		MethodDescriptor md = mb.getMethodDescriptor();
 		String typeString = "(";
 		
 		for(String type : md.argumentTypes) {
@@ -405,8 +417,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		if(md.returnType == null) {
 			typeString += "V";
-		} else if(md.returnType.contentEquals("SELF_TYPE")) {
-			typeString += this.getTypeString(currentClass.className);
+		} else if(md.returnType.equals("SELF_TYPE")) {
+			typeString += this.getTypeString(mb.getClassWhereDefined());
 		} else {
 		
 			typeString += this.getTypeString(md.returnType);

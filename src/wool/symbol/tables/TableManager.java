@@ -75,7 +75,7 @@ public class TableManager {
 
 		cd.addMethod(MethodBinding.makeMethodBinding(md, null, "IO"));
 		md = new MethodDescriptor("outStr", "SELF_TYPE", "Str");
-
+		
 		cd.addMethod(MethodBinding.makeMethodBinding(md, null, "IO"));
 		md = new MethodDescriptor("outBool", "SELF_TYPE", "Bool");
 

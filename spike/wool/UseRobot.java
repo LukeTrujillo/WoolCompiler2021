@@ -63,6 +63,8 @@ public class UseRobot extends Wheel{
 		
 		assert this.run() == false;
 		
+		this.hello();
+		
 		System.out.println("all assertions passed");
 	}
 
