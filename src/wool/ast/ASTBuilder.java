@@ -353,16 +353,15 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	public ASTNode visitFullMethodCall(FullMethodCallContext ctx) {
 		
 		WoolMethodCall method = ASTFactory.makeMethodCall(DispatchType.mcObject);
+		
+		method.methodName = ctx.methodName.getText();
 				
-		ASTNode caller = ctx.object.accept(this);
+		ASTNode caller = this.visitExprContext(ctx.object);
 		method.setObject(caller);
-	
-		ASTNode methodName = ASTFactory.makeConstant(ctx.methodName, TerminalType.tMethod);
-		method.setMethodName(methodName);
 		
 		for(ExprContext param: ctx.args) {
 			ASTNode pNode = this.visitExprContext(param);
-			methodName.addChildAndSetAsParent(pNode);
+			method.addChildAndSetAsParent(pNode);
 		}
 		
 	
@@ -374,12 +373,11 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	public ASTNode visitLocalMethodCall(LocalMethodCallContext ctx) {
 		WoolMethodCall method = ASTFactory.makeMethodCall(DispatchType.mcLocal);
 		
-		WoolTerminal methodName = ASTFactory.makeConstant(ctx.methodName, TerminalType.tMethod);
-		method.setMethodName(methodName);
+		method.methodName = ctx.methodName.getText();
 		
 		for(ExprContext expr : ctx.args) {
 			ASTNode node = this.visitExprContext(expr);
-			methodName.addChildAndSetAsParent(node);
+			method.addChildAndSetAsParent(node);
 		}
 		
 		return method;

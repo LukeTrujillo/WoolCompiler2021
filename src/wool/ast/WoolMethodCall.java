@@ -11,6 +11,8 @@ public class WoolMethodCall extends ASTNode {
 	public static enum DispatchType { mcLocal, mcObject};
 	
 	public DispatchType dispatch;
+	
+	public String methodName;
 
 	
 	public WoolMethodCall(DispatchType dispatch) {
@@ -30,10 +32,6 @@ public class WoolMethodCall extends ASTNode {
 
 	public ASTNode getObject() { return dispatch == DispatchType.mcLocal ? null : this.getChild(0); }
 
-	public ASTNode getMethodName() {
-		return dispatch == DispatchType.mcLocal ? getChild(0) : getChild(1);
-	}
-	
 
 	/*@Override
 	public String toString() { return getTabsForDepth() + nodeType.name() + "(calling: " + getMethodName().binding.getSymbol() + " children: " + children.size() + ")"; }*/

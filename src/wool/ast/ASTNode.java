@@ -21,7 +21,7 @@ public abstract class ASTNode {
 	public AbstractBinding binding;
 	
 	public Token token;
-	protected SymbolTable scope;
+	public SymbolTable scope;
 	
 	public ASTNode() {
 		this(null);

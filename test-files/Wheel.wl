@@ -5,7 +5,6 @@ class Axel {
 }
 
 class Wheel inherits Axel {
-	
 	axel:Axel <- new Axel;
 	n:Int <- 3;
 	
@@ -95,16 +94,7 @@ class Wheel inherits Axel {
         i;
       }
     }
-   ass(expect : int, actual : int) : Bool {
-      if expect = actual
-      then
-          true
-      else
-      	{
-      		false;
-      	}
-      fi
-    }
+  
     
     callSubstract() : Int {
     	sub(4, 5)
@@ -119,12 +109,30 @@ class Wheel inherits Axel {
     	axel.parentInheritedMethod()
     }
     
-    string() : Str {
-    	"hello"
+    go() : Int { 
+    	"yes".length()
     }
     
-    go() : Int { 
-    	Str.makeStr("yes").length()
+    assert(expect : boolean, actual : boolean) : boolean {
+        if expect = actual
+        then
+            true
+        else
+        {
+            (*abort();*)
+            false;
+        }
+        fi
+    }
+    
+     run() : boolean {
+      a : A <- new A;
+      {
+          assert(2, a.incr(4));
+      }
     }
   }
+	class A {
+	  incr(i : int) : int { i + 1}
+	}
 

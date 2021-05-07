@@ -45,7 +45,9 @@ public class ASTFactory {
 	public static WoolTerminal makeID(Token t) {
 		return new WoolTerminal(t, TerminalType.tID); 
 	}
-	public static WoolTerminal makeConstant(Token t, TerminalType type) { return new WoolTerminal(t, type); }
+	public static WoolTerminal makeConstant(Token t, TerminalType type) { 
+		return new WoolTerminal(t, type); 
+		}
 	public static WoolTerminal makeTypeTerminal(Token t) { return new WoolTerminal(t, WoolTerminal.TerminalType.tType); }
 	public static WoolNew makeWoolNew() { return new WoolNew(); }
 	

@@ -102,58 +102,49 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	}
 	@Override
 	public AbstractBinding visit(WoolMethodCall node) {
-
-		
-		String methodName = node.getMethodName().token.getText();
 	
-		ClassBinding binding = null;
+		AbstractBinding binding = null;
+		String name = node.methodName;
 		
 		if(node.dispatch == DispatchType.mcLocal) { //load the self object
-			binding = currentClassBinding;
-			if(binding == null) throw new WoolException("self type not defined in class " + currentClassBinding.getClassDescriptor().className);
+			binding = node.scope.lookup(name);
 			
-		} else if(node.dispatch == DispatchType.mcObject) {
-			AbstractBinding ob = node.getObject().accept(this);
-			
-			String type = ob.getSymbolType();
-			
-			if(type.equals("SELF_TYPE")) {
-				type = ob.getClassWhereDefined();
-				ob.symbolType = ob.getClassWhereDefined();
+			if(binding == null) {
+				ClassBinding parent = tm.getClassBindingFromString(currentClassBinding.getClassDescriptor().inherits);
 				
-				if(ob instanceof MethodBinding) {
-					MethodBinding mb = (MethodBinding) ob;
-					mb.getMethodDescriptor().returnType = type;
+				while(binding == null) {
+					binding = parent.getClassDescriptor().getMethodBinding(name);
+					
+					if(parent.getClassDescriptor().inherits == null) break;
+					
+					parent = tm.getClassBindingFromString(parent.getClassDescriptor().inherits);
 				}
+				
 			}
 			
 			
-	
-		
-			binding = tm.getClassBindingFromString(type);
-			if(binding == null) throw new WoolException("unable to locate the class binding when doing a full method call");
-		}
-	
-		
-		MethodBinding mb = null;
-		
-		
-		while(mb == null) {
+			if(binding == null) throw new WoolException("self type not defined in class " + currentClassBinding.getClassDescriptor().className);
 			
-			 mb = binding.getClassDescriptor().getMethodBinding(methodName);
-			 
-			 if(binding.getClassDescriptor().inherits == null || mb != null) break;
-			 
-			 binding = tm.getClassBindingFromString(binding.getClassDescriptor().inherits);
+		} else if(node.dispatch == DispatchType.mcObject) {
+			AbstractBinding ab = node.getObject().accept(this);
+			if(ab == null) throw new WoolException(node.getObject() + " has no binding ");
+			
+			ClassBinding parent = tm.getClassBindingFromString(ab.getSymbolType());
+			
+			while(binding == null) {
+				binding = parent.getClassDescriptor().getMethodBinding(name);
+				
+				if(parent.getClassDescriptor().inherits == null || binding != null) break;
+				
+				parent = tm.getClassBindingFromString(parent.getClassDescriptor().inherits);
+			}
+			if(binding == null) throw new WoolException("mcObject " + currentClassBinding.getClassDescriptor().className);
 		}
 		
+		node.binding = binding;
 		
-		if(mb == null) throw new WoolException(node.getMethodName().binding.getSymbol() + " not registered in class " + binding.getSymbol());
-		
-		node.getMethodName().binding = mb;
-		node.binding = mb;
-		
-		return mb;
+		visitChildren(node);
+		return binding;
 	}
 	
 
@@ -172,39 +163,17 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	public AbstractBinding visit(WoolTerminal node) {
 		
 		if(node.binding == null) {
-			if(node.terminalType == TerminalType.tID) { //now start checking at class definitons
-				
-				if(currentMethod != null) {
-					int index = currentMethod.argumentDefinedHereAtChildIndex(node.token.getText());
-					
-					if(index != -1) {
-						if(currentMethod.getChild(index) instanceof WoolAssign) {
-							node.binding = ((WoolAssign) currentMethod.getChild(index)).getIdentifer().binding;
-						
-						} else {
-							node.binding = currentMethod.getChild(index).binding;
-						}
-					
-					}
-					
-				}
-					
-				if(node.binding == null)
-					node.binding = currentClassBinding.getClassDescriptor().getVariable(node.token.getText());
-				
-				
-				
+			if(node.terminalType == TerminalType.tID) {
+				node.binding = node.scope.lookup(node.token.getText());
 			} else if(node.terminalType == TerminalType.tType) {
-				node.binding = tm.getClassTable().lookup(node.token.getText());
-			} else if(node.terminalType == TerminalType.tInt) {
+				node.binding = tm.getClassBindingFromString(node.token.getText());
+			}  if(node.terminalType == TerminalType.tInt) {
 				node.binding = tm.getClassTable().lookup("Int");
 			} else if(node.terminalType == TerminalType.tBool) {
 				node.binding = tm.getClassTable().lookup("Bool");
 			} else if(node.terminalType == TerminalType.tStr) {
 				node.binding = tm.getClassTable().lookup("Str");
-			} 
-		
-			
+			}
 		}
 		
 		if(node.binding == null && (node.terminalType != TerminalType.tMethod)) {

@@ -55,13 +55,6 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	ClassDescriptor currentClass;
 	WoolMethod currentMethod;
 	
-	Stack<Label> jumps;
-	Stack<ObjectBinding> localTypes;
-
-	Stack<Object> frameStack;
-	
-	
-	//int nextLocalAddr;
 	
 	boolean inConstructor;
 
@@ -113,23 +106,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + currentClass.inherits, "<init>", "()V", false);
 		}
-	
-		jumps = new Stack<Label>();
-		frameStack = new Stack<Object>();
 		
-		localTypes  = new Stack<ObjectBinding>();
-		localTypes.add(currentClass.getVariable("self"));
-		
-		for(ASTNode child : node.getChildren()) {
-			
-			if(child instanceof WoolAssign) {
-				child = ((WoolAssign) child).getIdentifer();
-			}
-			
-			if(child instanceof WoolVariable) {
-				localTypes.add((ObjectBinding) child.binding);
-			}
-		}
 	
 		currentMethod = node;
 		visitChildren(node); //TODO this may cause issue with variables under method dec but above expr list
@@ -174,22 +151,29 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			int index = currentMethod.argumentDefinedHereAtChildIndex(setThis.binding.symbol);
 			
 			if(index == -1) {
+				
 				mv.visitIntInsn(ALOAD, 0);
 			}
 			
 			withThis.accept(this); //whatever the value is should be on the TOS
 			
 			if(index != -1) { //it is a local variable
-				mv.visitVarInsn(ISTORE, index + 1);	
+				
+				if(setThis.binding.getSymbolType().equals("Int") || setThis.binding.getSymbolType().equals("Bool")) {
+						mv.visitVarInsn(ISTORE, index + 1);	
+				} else {
+						mv.visitVarInsn(ASTORE, index + 1);	
+					
+				}
 				return null;
 			} 
 			
 		}
-		if(withThis instanceof WoolTerminal && ((WoolTerminal) withThis).terminalType == TerminalType.tType) {
+	/*	if(withThis instanceof WoolTerminal && ((WoolTerminal) withThis).terminalType == TerminalType.tType) {
 			mv.visitTypeInsn(NEW, DEFAULT_PACKAGE + withThis.binding.getSymbolType());
 			mv.visitInsn(DUP);
 			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + withThis.binding.getSymbolType(), "<init>", "()V", false);
-		}
+		}*/
 		
 		mv.visitFieldInsn(PUTFIELD, DEFAULT_PACKAGE + currentClass.className, setThis.binding.symbol, this.getTypeString(setThis.binding.getSymbolType()));
 		
@@ -222,7 +206,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		Label l2 = new Label();
 		Label l3 = new Label();
 		
-		frameStack = new Stack<Object>();
+		
 		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l1);
 	
 		mv.visitLabel(l2);
@@ -249,13 +233,12 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		Label l3 = new Label();
 
 		mv.visitLabel(l1);
-		mv.visitFrame(Opcodes.F_SAME, this.getLocalTypeArray().length, this.getLocalTypeArray(), 0, null);
+	
 		node.getChild(0).accept(this);
 		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l2);
 		mv.visitJumpInsn(GOTO, l3);
 		
 		mv.visitLabel(l2);
-		mv.visitFrame(Opcodes.F_SAME, this.getLocalTypeArray().length, this.getLocalTypeArray(), 0, null);
 		node.getChild(1).accept(this);
 		mv.visitJumpInsn(GOTO, l1);
 		
@@ -307,7 +290,10 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				}
 				break;
 			case tID:
-				if(!isMethodLocal(node.binding))  {
+				if(!(node.binding.getSymbolType().equals("Int") || node.binding.getSymbolType().equals("Bool"))) {
+					int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.getSymbol());
+					mv.visitVarInsn(ALOAD, index + 1);
+				} else if(!isMethodLocal(node.binding))  {
 					mv.visitIntInsn(ALOAD, 0);
 					mv.visitFieldInsn(GETFIELD, DEFAULT_PACKAGE + currentClass.className, node.binding.getSymbol(), this.getTypeString(node.binding.getSymbolType()));
 				} else {
@@ -320,6 +306,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + "Str", "makeStr", "(Ljava/lang/String;)Lwool/Str;", false);
 				break;
 			case tType:
+				mv.visitTypeInsn(NEW, DEFAULT_PACKAGE + node.binding.getSymbolType());
+				mv.visitInsn(DUP);
+				mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + node.binding.getSymbolType(), "<init>", "()V", false);
 				break;
 			}
 		
@@ -332,31 +321,23 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		if(node.dispatch == DispatchType.mcLocal) {
 		
 			mv.visitVarInsn(ALOAD, 0);
-			frameStack.push(Opcodes.INTEGER);
 			
-			for(ASTNode child : node.getMethodName().getChildren()) {
+			
+			for(ASTNode child : node.getChildren()) {
 				child.accept(this);
 			}
 			
-			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + currentClass.className, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
-			frameStack.push(DEFAULT_PACKAGE + currentClass.inherits);
+			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + currentClass.className, node.binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.binding).getMethodDescriptor()), false);
 			
 			
 		} else if(node.dispatch == DispatchType.mcObject) {
 			
-			node.getObject().accept(this);
-			
-			for(ASTNode child : node.getMethodName().getChildren()) {
+			for(ASTNode child : node.getChildren()) {
 				child.accept(this);
 			}
-			
-			//static method
-			if(node.getObject() instanceof WoolTerminal && (((WoolTerminal) node.getObject()).terminalType == TerminalType.tStr || ((WoolTerminal) node.getObject()).terminalType == TerminalType.tType)) {
-				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
-			} else {
-				mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
 		
-			}
+			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.binding).getMethodDescriptor()), false);
+		
 		
 		}
 		
@@ -446,32 +427,6 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		return currentMethod != null && currentMethod.argumentDefinedHereAtChildIndex(binding.getSymbol()) != -1;
 	}
 
-	public Object[] getLocalTypeArray() {
-		Object[] arr = new Object[localTypes.size()];
-		
-		for(int x = 0; x < localTypes.size(); x++) {
-			ObjectBinding binding = localTypes.get(x);
-			
-			if(binding.getSymbolType().equals("Int") || binding.getSymbolType().equals("Bool")) {
-				arr[x] = Opcodes.INTEGER;
-			} else {
-				arr[x] = DEFAULT_PACKAGE + binding.getSymbolType();
-			}
-		}
-		
-		return arr;
-	}
-	
-	public Object[] getStackTypeArray() {
-		Object[] arr = new Object[frameStack.size()];
-		
-		for(int x = 0; x < frameStack.size(); x++) {
-			arr[x] = frameStack.size();
-		}
-		
-		return arr;
-		
-	}
 	
 	
 }

@@ -55,12 +55,13 @@ public class UseRobot extends Wheel{
 		
 		assert this.countdown(10) == 10 : "expect 10, got " + this.countdown(10);
 		
-		assert this.ass(3, -3) == false;
-		assert this.ass(2, 2) == true;
 		
 		assert this.callSubstract() == -1;
 	
-		this.string();
+		assert this.go() == 3;
+		
+		
+		assert this.run() == false;
 		
 		System.out.println("all assertions passed");
 	}
