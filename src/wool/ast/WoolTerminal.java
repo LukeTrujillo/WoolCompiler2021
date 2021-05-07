@@ -8,7 +8,7 @@ import wool.typechecking.TypeChecker;
 
 public class WoolTerminal extends ASTNode{
 
-	public static enum TerminalType {tInt, tStr, tBool, tID, tMethod, tType};
+	public static enum TerminalType {tInt, tStr, tBool, tID, tMethod, tType, tNull};
 		
 	public TerminalType terminalType;
 	
@@ -35,7 +35,7 @@ public class WoolTerminal extends ASTNode{
 			return getTabsForDepth() + "binding_symbol=" + binding.getSymbol() + " (Node"
 					+ " Type: " + nodeType.name() + "  Termninal Type: " + terminalType.name() + ")"; 
 		else 
-			return getTabsForDepth() + "token=" + token.getText() + " (Node Type: " + nodeType.name() + "  Termninal Type: " + terminalType.name() + ")"; 
+			return getTabsForDepth() + "token=" + (token == null? "null" : token.getText()) + " (Node Type: " + nodeType.name() + "  Termninal Type: " + terminalType.name() + ")"; 
 	
 	}
 

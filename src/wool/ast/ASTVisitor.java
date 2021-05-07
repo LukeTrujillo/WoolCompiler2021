@@ -34,6 +34,11 @@ public abstract class ASTVisitor<T> {
 		if(node instanceof WoolCompare) return this.visit((WoolCompare) node);
 		
 		if(node instanceof WoolNew)return this.visit((WoolNew) node);
+		
+		if(node instanceof WoolSelect) return this.visit((WoolSelect) node);
+		
+		if(node instanceof WoolSelectAlt) return this.visit((WoolSelectAlt) node);
+		
 
 		throw new WoolException("Unregistered ASTNode in WoolVisitor");
 	}
@@ -52,6 +57,10 @@ public abstract class ASTVisitor<T> {
 	public T visit(WoolParen node) { return visitChildren(node); }
 	public T visit(WoolIf node) { return visitChildren(node); }
 	public T visit(WoolCompare node) { return visitChildren(node); }
+	public T visit(WoolSelect node) { return visitChildren(node); }
+	public T visit(WoolSelectAlt node) { return visitChildren(node); }
+	
+	
 	
 	
 	public T visitChildren(ASTNode node) {

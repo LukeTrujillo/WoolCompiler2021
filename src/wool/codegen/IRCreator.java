@@ -23,6 +23,8 @@ import wool.ast.WoolMethodCall;
 import wool.ast.WoolMethodCall.DispatchType;
 import wool.ast.WoolNew;
 import wool.ast.WoolProgram;
+import wool.ast.WoolSelect;
+import wool.ast.WoolSelectAlt;
 import wool.ast.WoolTerminal;
 import wool.ast.WoolTerminal.TerminalType;
 import wool.ast.WoolType;
@@ -54,6 +56,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 	ClassDescriptor currentClass;
 	WoolMethod currentMethod;
+	String currentMethodReturnType;
 	
 	
 	boolean inConstructor;
@@ -84,8 +87,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			
 			ClassReader reader = new ClassReader(byteCode);
 			
-			
-		        ClassVisitor visitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(System.out));  // ASMified code
+			ClassVisitor visitor = new TraceClassVisitor(new PrintWriter(System.out));
 		        reader.accept(visitor, ClassReader.EXPAND_FRAMES);
 		}
 		
@@ -158,6 +160,10 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			}
 			
 			withThis.accept(this); //whatever the value is should be on the TOS
+			if(node.parent instanceof WoolAssign) {
+				mv.visitInsn(DUP_X1);
+			}
+			
 			
 			if(index != -1) { //it is a local variable
 				
@@ -187,36 +193,35 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		if(currentMethod == null) {
 			fv = cw.visitField(ACC_PROTECTED, binding.symbol, this.getTypeString(binding.getSymbolType()), null, null);
 			fv.visitEnd();
-		} else if(node.parent instanceof WoolMethod) {
-			/*int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.symbol);
+		} /*else if(node.parent instanceof WoolMethod) {
+			int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.symbol);
 			mv.visitInsn(ICONST_0);
-			mv.visitVarInsn(ISTORE, index + 1);	*/
-		}
+			mv.visitVarInsn(ISTORE, index + 1);	
+		}*/
 		return null;
 	}
 	
 	@Override
 	public byte[] visit(WoolIf node) {
+		Label t = new Label();
+		Label f = new Label();
+		Label exit = new Label();
+		
+		
 		node.getChild(0).accept(this);
+		mv.visitInsn(ICONST_1);
+		mv.visitJumpInsn(Opcodes.IF_ICMPEQ, t);
+		mv.visitJumpInsn(GOTO, f);
 		
-		Label l1 = new Label();
-		Label l2 = new Label();
-		Label l3 = new Label();
-		
-		
-		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l1);
-	
-		mv.visitLabel(l2);
+		mv.visitLabel(f);
 		node.getChild(2).accept(this);
+		mv.visitJumpInsn(GOTO, exit);
 	
-		mv.visitJumpInsn(GOTO, l3);
-	
-		mv.visitLabel(l1);
-
+		mv.visitLabel(t);
 		node.getChild(1).accept(this);
+		mv.visitJumpInsn(GOTO, exit);
 		
-		mv.visitLabel(l3); //end0
-		
+		mv.visitLabel(exit); //end0
 		
 		return null;
 		
@@ -232,7 +237,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		mv.visitLabel(l1);
 	
 		node.getChild(0).accept(this);
-		mv.visitJumpInsn(((WoolCompare) node.getChild(0)).opcode, l2);
+		mv.visitInsn(ICONST_1);
+		mv.visitJumpInsn(Opcodes.IF_ICMPEQ, l2);
 		mv.visitJumpInsn(GOTO, l3);
 		
 		mv.visitLabel(l2);
@@ -243,16 +249,89 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		mv.visitLabel(l3);
 		return null;
 	}
+	@Override
+	public byte[] visit(WoolSelect node) {
+
+		
+		for(ASTNode child : node.getChildren()) {
+			Label next = new Label();
+			
+		
+			child.getChild(0).accept(this); //eval the condition, return 1 or 0 
+			
+			Label t = new Label();
+			mv.visitInsn(ICONST_1);
+			mv.visitJumpInsn(Opcodes.IF_ICMPEQ, t);
+			mv.visitJumpInsn(GOTO, next);
+
+		
+			mv.visitLabel(t);
+			child.getChild(1).accept(this);
+			mv.visitInsn(methodReturn(currentMethod.binding.getMethodDescriptor().returnType)); //method return type
+			
+			mv.visitLabel(next);
+		}
+		
+		mv.visitInsn(ICONST_1); //this will need to change depending upon the end goal
+	
+		return null;
+	}
+	
+	@Override
+	public byte[] visit(WoolSelectAlt node) {
+		node.getChild(0).accept(this);
+		
+		return null;
+	}
 	
 	@Override
 	public byte[] visit(WoolCompare node) {
 		if(node.getChildren().size() == 1) { //flip it
+			Label t = new Label();
+			Label f = new Label();
+			
+			Label exit = new Label();
+			
+			node.getChild(0).accept(this);
+			
+			mv.visitJumpInsn(node.opcode, t);
+			mv.visitJumpInsn(GOTO, f);
+			
+			mv.visitLabel(t);
+			mv.visitInsn(ICONST_1);
+			mv.visitJumpInsn(GOTO, exit);
+			
+			mv.visitLabel(f);
+			mv.visitInsn(ICONST_0);
+			mv.visitJumpInsn(GOTO, exit);
+			
+			
+			mv.visitLabel(exit);
+			
 			
 		} else { //compare
 			
+			Label t = new Label();
+			Label f = new Label();
+			
+			Label exit = new Label();
+			
 			node.getChild(0).accept(this);
 			node.getChild(1).accept(this);
-
+			
+			mv.visitJumpInsn(node.opcode, t);
+			mv.visitJumpInsn(GOTO, f);
+			
+			mv.visitLabel(t);
+			mv.visitInsn(ICONST_1);
+			mv.visitJumpInsn(GOTO, exit);
+			
+			mv.visitLabel(f);
+			mv.visitInsn(ICONST_0);
+			mv.visitJumpInsn(GOTO, exit);
+			
+			
+			mv.visitLabel(exit);
 		}
 		
 		return null;
@@ -308,6 +387,9 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				mv.visitInsn(DUP);
 				mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + node.binding.getSymbolType(), "<init>", "()V", false);
 				break;
+			case tNull:
+				mv.visitInsn(ACONST_NULL);
+				break;
 			}
 		
 		return null;
@@ -340,16 +422,21 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				child.accept(this);
 			}
 			
-			owner = DEFAULT_PACKAGE + node.getObject().binding.symbolType;
+			owner = DEFAULT_PACKAGE + ((WoolMethodCall) node).getCallerType();
 			name = node.binding.getSymbol();
 			signature = this.getMethodTypeString(((MethodBinding)node.binding));
 		}
-		
-		if(owner.contentEquals("wool/SELF_TYPE")) {
-			owner = DEFAULT_PACKAGE + currentClass.className;
-		}
+	
+		signature = signature.replaceAll("SELF_TYPE", node.getCallerType());
 		
 		mv.visitMethodInsn(INVOKEVIRTUAL, owner, name, signature, false);
+		
+		if(node.parent instanceof WoolExprList) {
+			if(node.parent.getChild(node.parent.getChildren().size() - 1) != node && !signature.endsWith(")V")) {
+				//this means its the last node in the expr list
+				mv.visitInsn(POP);
+			}
+		}
 		
 		
 		return null;
@@ -417,8 +504,6 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		if(md.returnType == null) {
 			typeString += "V";
-		} else if(md.returnType.equals("SELF_TYPE")) {
-			typeString += this.getTypeString(mb.getClassWhereDefined());
 		} else {
 		
 			typeString += this.getTypeString(md.returnType);

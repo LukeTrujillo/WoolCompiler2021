@@ -102,12 +102,17 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	}
 	@Override
 	public AbstractBinding visit(WoolMethodCall node) {
+		
+
+		visitChildren(node);
+		
+		node.calledIn = currentClassBinding;
 	
-		AbstractBinding binding = null;
+		MethodBinding binding = null;
 		String name = node.methodName;
 		
 		if(node.dispatch == DispatchType.mcLocal) { //load the self object
-			binding = node.scope.lookup(name);
+			binding = (MethodBinding) node.scope.lookup(name);
 			
 			if(binding == null) {
 				ClassBinding parent = tm.getClassBindingFromString(currentClassBinding.getClassDescriptor().inherits);
@@ -146,10 +151,8 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			}
 			if(binding == null) throw new WoolException("mcObject " + currentClassBinding.getClassDescriptor().className);
 		}
-		
 		node.binding = binding;
 		
-		visitChildren(node);
 		return binding;
 	}
 	
@@ -182,7 +185,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			}
 		}
 		
-		if(node.binding == null && (node.terminalType != TerminalType.tMethod)) {
+		if(node.binding == null && (node.terminalType != TerminalType.tMethod) && node.terminalType != TerminalType.tNull) {
 			throw new WoolException("Undefined variable " + node.token.getText() + " used");
 		}
 		

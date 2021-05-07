@@ -46,7 +46,7 @@ expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #Ful
 	| n='null' #NullExpr
 	;
 
-selectAlt :   expr ':' expr ';' ;
+selectAlt :   conditon=expr ':' action=expr ';' ;
 
 STRING:  '"' ('\\'. | ~[\n])*? '"';
 

@@ -42,18 +42,18 @@ public class ASTFactory {
 	public static WoolWhile makeWhile() { return new WoolWhile(); }
 
 	public static WoolTerminal makeID(AbstractBinding b) { return new WoolTerminal(b); }
-	public static WoolTerminal makeID(Token t) {
-		return new WoolTerminal(t, TerminalType.tID); 
-	}
-	public static WoolTerminal makeConstant(Token t, TerminalType type) { 
-		return new WoolTerminal(t, type); 
-		}
+	public static WoolTerminal makeID(Token t) { return new WoolTerminal(t, TerminalType.tID); }
+	public static WoolTerminal makeConstant(Token t, TerminalType type) { return new WoolTerminal(t, type); }
 	public static WoolTerminal makeTypeTerminal(Token t) { return new WoolTerminal(t, WoolTerminal.TerminalType.tType); }
 	public static WoolNew makeWoolNew() { return new WoolNew(); }
 	
 	public static WoolMath makeWoolMath(Token op) { return new WoolMath(op); }
 	public static WoolParen makeWoolParen() { return new WoolParen(); }
 	
-	public static WoolCompare nakeWoolCompare(Token op) { return new WoolCompare(op); }
+	public static WoolCompare makeWoolCompare(Token op) { return new WoolCompare(op); }
+	public static WoolCompare makeWoolCompare(String op) { return new WoolCompare(op); }
+	
+	public static WoolSelect makeWoolSelect() { return new WoolSelect(); };
+	public static WoolSelectAlt makeWoolSelectAlt() { return new WoolSelectAlt(); }
 
 }

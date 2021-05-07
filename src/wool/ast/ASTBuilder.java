@@ -19,6 +19,7 @@ import wool.lexparse.WoolParser.FormalContext;
 import wool.lexparse.WoolParser.FullMethodCallContext;
 import wool.lexparse.WoolParser.IDExprContext;
 import wool.lexparse.WoolParser.IfExprContext;
+import wool.lexparse.WoolParser.IsNullExprContext;
 import wool.lexparse.WoolParser.LocalMethodCallContext;
 import wool.lexparse.WoolParser.MathExprContext;
 import wool.lexparse.WoolParser.MethodContext;
@@ -29,6 +30,8 @@ import wool.lexparse.WoolParser.NumExprContext;
 import wool.lexparse.WoolParser.ParenExprContext;
 import wool.lexparse.WoolParser.ProgramContext;
 import wool.lexparse.WoolParser.RelExprContext;
+import wool.lexparse.WoolParser.SelectAltContext;
+import wool.lexparse.WoolParser.SelectExprContext;
 import wool.lexparse.WoolParser.StrExprContext;
 import wool.lexparse.WoolParser.TrueExprContext;
 import wool.lexparse.WoolParser.UMinusExprContext;
@@ -185,14 +188,54 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 		if(ctx instanceof EqExprContext) return ((EqExprContext) ctx).accept(this);
 		if(ctx instanceof NotExprContext) return ((NotExprContext) ctx).accept(this);
 		
+		if(ctx instanceof SelectExprContext) return ((SelectExprContext) ctx).accept(this);
+		
 		if(ctx instanceof NewExprContext) return ((NewExprContext) ctx).accept(this);
+		
+		if(ctx instanceof NullExprContext) return ASTFactory.makeConstant(null, TerminalType.tNull);
+		
+		if(ctx instanceof IsNullExprContext) { return ((IsNullExprContext) ctx).accept(this);}
 		
 		return null;
 	}
 	
 	@Override
+	public ASTNode visitSelectExpr(SelectExprContext ctx) {
+		WoolSelect select = ASTFactory.makeWoolSelect();
+		
+		for(SelectAltContext expr: ctx.selectAlt()) {
+			ASTNode child = expr.accept(this);
+			select.addChildAndSetAsParent(child);
+		}
+		
+		return select;
+	}
+	
+	@Override
+	public ASTNode visitSelectAlt(SelectAltContext ctx) {
+		WoolSelectAlt selectAlt = ASTFactory.makeWoolSelectAlt();
+		
+		selectAlt.addChildAndSetAsParent(this.visitExprContext(ctx.conditon));
+		selectAlt.addChildAndSetAsParent(this.visitExprContext(ctx.action));
+		
+		return selectAlt;
+	}
+	
+	
+	
+	
+	@Override
+	public ASTNode visitIsNullExpr(IsNullExprContext ctx) {
+		WoolCompare comp = ASTFactory.makeWoolCompare("isnull");
+		comp.addChildAndSetAsParent(this.visitExprContext(ctx.expr()));
+		
+		return comp;
+	}
+	
+	
+	@Override
 	public ASTNode visitNotExpr(NotExprContext ctx) {
-		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		WoolCompare comp = ASTFactory.makeWoolCompare(ctx.op);
 		
 		ASTNode left = this.visitExprContext(ctx.left);
 		comp.addChildAndSetAsParent(left);
@@ -202,7 +245,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitRelExpr(RelExprContext ctx) {
-		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		WoolCompare comp = ASTFactory.makeWoolCompare(ctx.op);
 		
 		ASTNode left = this.visitExprContext(ctx.left);
 		comp.addChildAndSetAsParent(left);
@@ -215,7 +258,7 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitEqExpr(EqExprContext ctx) {
-		WoolCompare comp = ASTFactory.nakeWoolCompare(ctx.op);
+		WoolCompare comp = ASTFactory.makeWoolCompare(ctx.op);
 		
 		ASTNode left = this.visitExprContext(ctx.left);
 		comp.addChildAndSetAsParent(left);
