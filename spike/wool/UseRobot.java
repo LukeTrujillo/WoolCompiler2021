@@ -60,7 +60,7 @@ public class UseRobot extends Wheel{
 		
 		assert this.callSubstract() == -1;
 	
-		this.countdown(100);
+		this.string();
 		
 		System.out.println("all assertions passed");
 	}
@@ -76,6 +76,9 @@ public class UseRobot extends Wheel{
 	        //ClassVisitor visitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(System.out));  // ASMified code
 	        reader.accept(visitor, ClassReader.EXPAND_FRAMES);
 	        
+	    
+	        
+	      
 	       UseRobot robot = new UseRobot();
 	}
 

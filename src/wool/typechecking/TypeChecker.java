@@ -81,7 +81,7 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			} else if(returnType != null && returnType.equals("boolean")) {
 				node.binding.getMethodDescriptor().returnType = "Bool";
 				returnType = node.binding.getMethodDescriptor().returnType;
-			}
+			} 
 		 
 		 AbstractBinding search = tm.getClassTable().lookup(returnType);
 		 
@@ -102,6 +102,9 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	}
 	@Override
 	public AbstractBinding visit(WoolMethodCall node) {
+
+		
+		String methodName = node.getMethodName().token.getText();
 	
 		ClassBinding binding = null;
 		
@@ -110,19 +113,36 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 			if(binding == null) throw new WoolException("self type not defined in class " + currentClassBinding.getClassDescriptor().className);
 			
 		} else if(node.dispatch == DispatchType.mcObject) {
-			ObjectBinding ob = (ObjectBinding) node.getObject().accept(this);
-			binding = tm.getClassBindingFromString(ob.getSymbolType());
+			AbstractBinding ob = node.getObject().accept(this);
 			
+			String type = ob.getSymbolType();
+			
+			if(type.equals("SELF_TYPE")) {
+				type = ob.getClassWhereDefined();
+				ob.symbolType = ob.getClassWhereDefined();
+				
+				if(ob instanceof MethodBinding) {
+					MethodBinding mb = (MethodBinding) ob;
+					mb.getMethodDescriptor().returnType = type;
+				}
+			}
+			
+			
+	
+		
+			binding = tm.getClassBindingFromString(type);
 			if(binding == null) throw new WoolException("unable to locate the class binding when doing a full method call");
 		}
 	
 		
 		MethodBinding mb = null;
 		
+		
 		while(mb == null) {
-			 mb = binding.getClassDescriptor().getMethodBinding(node.getMethodName().token.getText());
+			
+			 mb = binding.getClassDescriptor().getMethodBinding(methodName);
 			 
-			 if(binding.getClassDescriptor().inherits == null) break;
+			 if(binding.getClassDescriptor().inherits == null || mb != null) break;
 			 
 			 binding = tm.getClassBindingFromString(binding.getClassDescriptor().inherits);
 		}
@@ -131,8 +151,9 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		if(mb == null) throw new WoolException(node.getMethodName().binding.getSymbol() + " not registered in class " + binding.getSymbol());
 		
 		node.getMethodName().binding = mb;
+		node.binding = mb;
 		
-		return null;
+		return mb;
 	}
 	
 

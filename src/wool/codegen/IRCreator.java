@@ -110,9 +110,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		if(node.binding.getMethodDescriptor().methodName == "<init>") {
 			inConstructor = true;
-			System.out.println("ALOAD 0");
 			mv.visitVarInsn(ALOAD, 0);
-			System.out.println("INVOKESPECIAL <INIT>");
 			mv.visitMethodInsn(INVOKESPECIAL, DEFAULT_PACKAGE + currentClass.inherits, "<init>", "()V", false);
 		}
 	
@@ -318,6 +316,8 @@ public class IRCreator extends ASTVisitor<byte[]> {
 				}
 				break;
 			case tStr:
+				mv.visitLdcInsn(node.token.getText().substring(1, node.token.getText().length() - 1));
+				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + "Str", "makeStr", "(Ljava/lang/String;)Lwool/Str;", false);
 				break;
 			case tType:
 				break;
@@ -343,12 +343,22 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			
 			
 		} else if(node.dispatch == DispatchType.mcObject) {
-			mv.visitVarInsn(ALOAD, 0);
 			
 			node.getObject().accept(this);
-			mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
-		}
+			
+			for(ASTNode child : node.getMethodName().getChildren()) {
+				child.accept(this);
+			}
+			
+			//static method
+			if(node.getObject() instanceof WoolTerminal && (((WoolTerminal) node.getObject()).terminalType == TerminalType.tStr || ((WoolTerminal) node.getObject()).terminalType == TerminalType.tType)) {
+				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
+			} else {
+				mv.visitMethodInsn(INVOKEVIRTUAL, DEFAULT_PACKAGE + node.getObject().binding.symbolType, node.getMethodName().binding.getSymbol(), this.getMethodTypeString(((MethodBinding)node.getMethodName().binding).getMethodDescriptor()), false);
 		
+			}
+		
+		}
 		
 		return null;
 	}
@@ -414,7 +424,10 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		
 		if(md.returnType == null) {
 			typeString += "V";
+		} else if(md.returnType.contentEquals("SELF_TYPE")) {
+			typeString += this.getTypeString(currentClass.className);
 		} else {
+		
 			typeString += this.getTypeString(md.returnType);
 		}
 		
@@ -425,7 +438,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	private String getTypeString(String type) {
 		if(type.equals("Int") || type.equals("int")) return "I";
 		if(type.equals("Bool") || type.equals("boolean")) return "Z";
-	
+		
 		return "L" + DEFAULT_PACKAGE + type + ";";
 	}
 	

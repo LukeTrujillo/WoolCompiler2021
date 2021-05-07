@@ -48,6 +48,8 @@ expr: object=expr '.' methodName=ID '(' (args+=expr (',' args+=expr)*)? ')' #Ful
 
 selectAlt :   expr ':' expr ';' ;
 
+STRING:  '"' ('\\'. | ~[\n])*? '"';
+
 NUM: [0-9]+; 
 TYPE: ([A-Z][a-zA-Z0-9_]*);            
 ID: [a-z] [a-zA-Z_0-9]*; //should be the last rule
@@ -57,7 +59,6 @@ OPEN_BRACKET: '{';
 CLOSE_BRACKET: '}';
 	
 COMMENT: ( ('(*' .*? '*)') | ('#' .*? '\n')) -> skip;
-STRING:  '"' ('\\'. | ~[\n])*? '"';
 FORGET: [ \t\r\n\f]+ -> skip ;   
 
 fragment ESC: '\\"' | '\\\\' | '\\t' | '\\b' | '\\n' | '\\r' | '\\f' | '\\';

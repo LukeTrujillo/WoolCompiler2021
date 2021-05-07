@@ -387,9 +387,8 @@ public class ASTBuilder extends WoolBaseVisitor<ASTNode> {
 	
 	@Override
 	public ASTNode visitNewExpr(NewExprContext ctx) {
-		//WoolNew woolNew = ASTFactory.makeWoolNew();
+
 		WoolTerminal type = ASTFactory.makeTypeTerminal(ctx.type);
-		//woolNew.addChildAndSetAsParent(type);
 		
 		return type;
 	}

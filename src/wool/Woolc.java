@@ -53,7 +53,7 @@ public class Woolc
         phase = SEMANTIC;
         displayParseTree = false;
         displayGUI = false;
-        displayAST = true;
+        displayAST = false;
         displayIR = false;
         displayTables = false;
         displaySource = false;

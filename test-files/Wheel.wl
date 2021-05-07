@@ -5,9 +5,11 @@ class Axel {
 }
 
 class Wheel inherits Axel {
+	
 	axel:Axel <- new Axel;
 	n:Int <- 3;
-
+	
+	
 	five: Int <- 5;
 	truth: Bool <- false;
 	zero: Int;	
@@ -116,6 +118,13 @@ class Wheel inherits Axel {
     tesFullCall() : Bool {
     	axel.parentInheritedMethod()
     }
-   
-	
-}
+    
+    string() : Str {
+    	"hello"
+    }
+    
+    go() : Int { 
+    	Str.makeStr("yes").length()
+    }
+  }
+
