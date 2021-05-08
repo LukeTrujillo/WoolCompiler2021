@@ -11,20 +11,17 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 
 
-public class UseRobot extends Wheel{
+public class UseRobot extends wool.Test {
 
 	
 	public UseRobot() {
 		this.run();
-		
-
-		System.out.println("all assertions passed");
 	}
 
 	public static void main(String args[]) throws IOException {
 
 		
-		 Class cls = Wheel.class;
+		 Class cls = Test.class;
 	        InputStream inputStream 
 	            = cls.getResourceAsStream(cls.getSimpleName() + ".class");
 	        ClassReader reader = new ClassReader(inputStream);
@@ -32,10 +29,11 @@ public class UseRobot extends Wheel{
 	        //ClassVisitor visitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(System.out));  // ASMified code
 	        reader.accept(visitor, ClassReader.EXPAND_FRAMES);
 	        
-	    
-	        
-	      
+	    try {
 	       UseRobot robot = new UseRobot();
+	    } catch(Exception e) {
+	    	e.printStackTrace();
+	    }
 	}
 
 }

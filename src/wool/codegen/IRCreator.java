@@ -85,10 +85,10 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			
 			classes.put((tcast.binding).getClassDescriptor().className, byteCode);
 			
-			ClassReader reader = new ClassReader(byteCode);
+			/*ClassReader reader = new ClassReader(byteCode);
 			
 			ClassVisitor visitor = new TraceClassVisitor(new PrintWriter(System.out));
-		        reader.accept(visitor, ClassReader.EXPAND_FRAMES);
+		        reader.accept(visitor, ClassReader.EXPAND_FRAMES);*/
 		}
 		
 		return null;
@@ -97,7 +97,6 @@ public class IRCreator extends ASTVisitor<byte[]> {
 	
 	@Override
 	public byte[] visit(WoolMethod node) {
-		System.out.println("new method\n" + node);
 		
 		MethodDescriptor descriptor = node.binding.getMethodDescriptor();
 		
@@ -193,11 +192,21 @@ public class IRCreator extends ASTVisitor<byte[]> {
 		if(currentMethod == null) {
 			fv = cw.visitField(ACC_PROTECTED, binding.symbol, this.getTypeString(binding.getSymbolType()), null, null);
 			fv.visitEnd();
-		} /*else if(node.parent instanceof WoolMethod) {
+		} else if(node.parent instanceof WoolMethod) {
 			int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.symbol);
-			mv.visitInsn(ICONST_0);
-			mv.visitVarInsn(ISTORE, index + 1);	
-		}*/
+			
+			if(node.binding.getSymbolType() == "Int" || node.binding.getSymbolType() == "Bool") {
+				mv.visitInsn(ICONST_0);
+				mv.visitVarInsn(ISTORE, index + 1);	
+			} else if(node.binding.getSymbolType() == "Str") {
+				mv.visitLdcInsn("");
+				mv.visitMethodInsn(INVOKESTATIC, DEFAULT_PACKAGE + "Str", "makeStr", "(Ljava/lang/String;)Lwool/Str;", false);
+				mv.visitVarInsn(ISTORE, index + 1);	
+			} else { //go null
+				mv.visitInsn(ACONST_NULL);
+				mv.visitVarInsn(ISTORE, index + 1);	
+			}
+		}
 		return null;
 	}
 	
@@ -294,7 +303,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			
 			node.getChild(0).accept(this);
 			
-			mv.visitJumpInsn(node.opcode, t);
+			mv.visitJumpInsn(node.getOpcode(), t);
 			mv.visitJumpInsn(GOTO, f);
 			
 			mv.visitLabel(t);
@@ -319,7 +328,7 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			node.getChild(0).accept(this);
 			node.getChild(1).accept(this);
 			
-			mv.visitJumpInsn(node.opcode, t);
+			mv.visitJumpInsn(node.getOpcode(), t);
 			mv.visitJumpInsn(GOTO, f);
 			
 			mv.visitLabel(t);
@@ -358,22 +367,21 @@ public class IRCreator extends ASTVisitor<byte[]> {
 			case tBool:
 				//mv.visitIntInsn(ALOAD, 0);
 				if(node.token.getText().contentEquals("true")) {
-					System.out.println("ICONST_1");
 					mv.visitInsn(ICONST_1);
 				} else {
-					System.out.println("ICONST_1");
 					mv.visitInsn(ICONST_0);
 				}
 				break;
 			case tID:
-				if(!(node.binding.getSymbolType().equals("Int") || node.binding.getSymbolType().equals("Bool"))) {
-					int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.getSymbol());
-					mv.visitVarInsn(ALOAD, index + 1);
+				int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.getSymbol());
+				if(node.token.getText().equals("this")) {
+					mv.visitVarInsn(ALOAD, 0);
 				} else if(!isMethodLocal(node.binding))  {
 					mv.visitIntInsn(ALOAD, 0);
 					mv.visitFieldInsn(GETFIELD, DEFAULT_PACKAGE + currentClass.className, node.binding.getSymbol(), this.getTypeString(node.binding.getSymbolType()));
+				} else if(!(node.binding.getSymbolType().equals("Int") || node.binding.getSymbolType().equals("Bool"))) {
+					mv.visitVarInsn(ALOAD, index + 1);
 				} else {
-					int index = currentMethod.argumentDefinedHereAtChildIndex(node.binding.getSymbol());
 					mv.visitVarInsn(ILOAD, index + 1);
 				}
 				break;

@@ -3,77 +3,63 @@ package wool.ast;
 import org.antlr.v4.runtime.Token;
 import org.objectweb.asm.Opcodes;
 
+import wool.utility.WoolException;
+
 public class WoolCompare extends ASTNode {
 	
-	public int opcode;
+	private int opcode;
 	public String tokenText;
 
 	public WoolCompare(Token token) {
 		super(ASTNodeType.nCompare);
-		this.token = token;
 		
-		tokenText = this.token.getText();
-		
-		switch(tokenText) {
-		case "=": 
-			opcode = Opcodes.IF_ICMPEQ;
-			break;
-		case "~=": 
-			opcode = Opcodes.IF_ICMPNE;
-			break;
-		case "<":
-			opcode = Opcodes.IF_ICMPLT;
-			break;
-		case ">":
-			opcode = Opcodes.IF_ICMPGT;
-			break;
-		case "<=":
-			opcode = Opcodes.IF_ICMPLE;
-			break;
-		case ">=":
-			opcode = Opcodes.IF_ICMPGE;
-			break;
-		case "isnull":
-			opcode = Opcodes.IFNULL;
-			break;
-		case "~":
-			opcode = Opcodes.IFEQ;
-			break;
-		}
+		tokenText = token.getText();
 	}
 	
 	public WoolCompare(String token) {
 		super(ASTNodeType.nCompare);
 		this.token = null;
-		
-		
-		switch(token) {
-		case "=": 
-			opcode = Opcodes.IF_ICMPEQ;
-			break;
-		case "~=": 
-			opcode = Opcodes.IF_ICMPNE;
-			break;
-		case "<":
-			opcode = Opcodes.IF_ICMPLT;
-			break;
-		case ">":
-			opcode = Opcodes.IF_ICMPGT;
-			break;
-		case "<=":
-			opcode = Opcodes.IF_ICMPLE;
-			break;
-		case ">=":
-			opcode = Opcodes.IF_ICMPGE;
-			break;
-		case "isnull":
-			opcode = Opcodes.IFNULL;
-			break;
-		case "~":
-			opcode = Opcodes.IFNE;
-			break;
-		}
+
 		tokenText = token;
+	}
+	
+	public int getOpcode() {
+		
+		
+		
+		if(getChild(0).binding.getSymbolType().equals("Int") || getChild(0).binding.getSymbolType().equals("Bool")) {
+			switch(tokenText) {
+			case "=": 
+				return Opcodes.IF_ICMPEQ;
+			case "~=": 
+				return Opcodes.IF_ICMPNE;
+			case "<":
+				return Opcodes.IF_ICMPLT;
+			case ">":
+				return Opcodes.IF_ICMPGT;
+			case "<=":
+				return Opcodes.IF_ICMPLE;
+			case ">=":
+				return Opcodes.IF_ICMPGE;
+			case "isnull":
+				return Opcodes.IFNULL;
+			case "~":
+				return Opcodes.IFNE;
+			}	
+		} else {
+			switch(tokenText) {
+			case "=": 
+				return Opcodes.IF_ACMPEQ;
+			case "~=": 
+				return Opcodes.IF_ACMPNE;
+			case "isnull":
+				return Opcodes.IFNULL;
+			case "~":
+				return Opcodes.IFNE;
+			}	
+		}
+		
+		throw new WoolException("Invalid use of a comparator for a given type");
 	}
 	
 	@Override

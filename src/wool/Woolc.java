@@ -50,7 +50,7 @@ public class Woolc
     {
         fileNames = new ArrayList<String>();
         outputDirectory = "woolcode";        // default
-        phase = SEMANTIC;
+        phase = COMPILE;
         displayParseTree = false;
         displayGUI = false;
         displayAST = false;

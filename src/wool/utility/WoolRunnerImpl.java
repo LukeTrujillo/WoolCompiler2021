@@ -57,14 +57,11 @@ public class WoolRunnerImpl implements WoolRunner {
 		return parseTree;
 	}
 
-//    @Override
+	@Override
 	public ASTNode createAST() {
-		System.out.println("Calling createAST()");
 		parseTree = parse();
 		ASTBuilder builder = new ASTBuilder();
 		ast = parseTree.accept(builder);
-
-		System.out.println("here: " + ast.getNodeType());
 		return ast;
 	}
 

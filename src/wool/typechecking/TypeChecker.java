@@ -34,6 +34,32 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 	
 		return null;
 	}
+	
+	@Override 
+	public AbstractBinding visit(WoolCompare node) {
+		
+		visitChildren(node);
+		
+		switch(node.tokenText) {
+		case "<":
+		case "<=":
+		case ">":
+		case ">=":
+			for(ASTNode child : node.getChildren()) {
+				if(child instanceof WoolCompare && !child.equals(node))
+					throw new WoolException("Binary expressions with <, <=, >, and >= cannot be chained together");
+			}
+			
+			return null;
+			
+		default:
+			return null;
+		}
+		
+		//Type matching
+		
+		
+	}
 
 	
 	@Override
@@ -87,13 +113,42 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		 
 		 for(ASTNode n : node.getChildren()) {
 				n.accept(this);
-			}
-		 
+		 }
 		 if(node.binding.getMethodDescriptor().getMethodName().equalsIgnoreCase("<init>")) {
 			 return null;
 		 }
 		 
 		if(search == null) throw new WoolException("Return type \"" + returnType + "\" not registered in method " + node.binding.getSymbol());
+		
+		
+		ClassBinding cb = tm.getClassBindingFromString(currentClassBinding.getClassDescriptor().className);
+		while(cb.getClassDescriptor().inherits != null) {
+			
+			
+			cb = tm.getClassBindingFromString(cb.getClassDescriptor().inherits);
+			
+			MethodBinding check = cb.getClassDescriptor().getMethodBinding(node.binding.getMethodDescriptor().methodName);
+			if(check != null) { //defined in parents
+				
+				if(check.getMethodDescriptor().getReturnType() != node.binding.getMethodDescriptor().returnType) {
+					throw new WoolException(node.binding.getMethodDescriptor().methodName + " is defined in the parent class with a different return type ");
+				}
+				
+				List<String> nodeArgs = node.binding.getMethodDescriptor().getArgumentTypes();
+				List<String> parentArgs = check.getMethodDescriptor().getArgumentTypes();
+				
+				if(nodeArgs.size() != parentArgs.size()) throw new WoolException(node.binding.getMethodDescriptor().methodName + " is defined in the parent class with a different number of args");
+				
+				for(int t = 0; t < nodeArgs.size(); t++) {
+					
+					if(!nodeArgs.get(x).equals(parentArgs.get(x))) {
+						throw new WoolException(node.binding.getMethodDescriptor().methodName + " is defined in the parent class with different arg types");
+					}
+				}
+				
+			}
+			
+		}
 		
 
 		currentMethod = null;
@@ -140,6 +195,21 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 				starting = currentClassBinding.symbolType;
 			}
 			
+			if(node.getObject() instanceof WoolMethodCall) {
+				
+				MethodBinding inner = (MethodBinding) ((WoolMethodCall) node.getObject()).binding;
+				
+				String definedIn = inner.getClassWhereDefined();
+				ClassBinding parent = tm.getClassBindingFromString(definedIn);
+				inner = parent.getClassDescriptor().getMethodBinding(((WoolMethodCall) node.getObject()).methodName);
+				
+				String context = inner.getMethodDescriptor().getReturnType();
+				
+				parent = tm.getClassBindingFromString(context);
+				binding = parent.getClassDescriptor().getMethodBinding(name);
+				
+			}
+			
 			ClassBinding parent = tm.getClassBindingFromString(starting);
 			
 			while(binding == null) {
@@ -149,7 +219,9 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 				
 				parent = tm.getClassBindingFromString(parent.getClassDescriptor().inherits);
 			}
-			if(binding == null) throw new WoolException("mcObject " + currentClassBinding.getClassDescriptor().className);
+			
+			
+			if(binding == null) throw new WoolException("No binding found for the object context method call " + node.methodName );
 		}
 		node.binding = binding;
 		
@@ -174,6 +246,12 @@ public class TypeChecker extends ASTVisitor<AbstractBinding> {
 		if(node.binding == null) {
 			if(node.terminalType == TerminalType.tID) {
 				node.binding = node.scope.lookup(node.token.getText());
+				
+				if(node.token.getText().equals("this")) {
+					node.binding = currentClassBinding;
+				}
+				
+				
 			} else if(node.terminalType == TerminalType.tType) {
 				node.binding = tm.getClassBindingFromString(node.token.getText());
 			}  if(node.terminalType == TerminalType.tInt) {
