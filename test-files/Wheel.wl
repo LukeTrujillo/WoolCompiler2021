@@ -1,3 +1,3 @@
-class Test {
-  b : boolean <- 2 = 2 = 4;
-}
+# Attempt to redefine a variable
+class Parent { a : int; }
+class Child inherits Parent { a : int; }

@@ -228,6 +228,9 @@ public class TableManager {
 	}
 	
 	public ClassBinding getClassBindingFromString(String className) {
+		if(className.equals("int")) className = "Int";
+		if(className.equals("boolean")) className = "Bool";
+		
 		AbstractBinding binding = getClassTable().lookup(className);
 		
 		if(binding == null || !(binding instanceof ClassBinding)) throw new WoolException("class name lookup for " + className + " not found");
